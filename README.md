@@ -54,7 +54,7 @@ There can be whitespace between parameters/ordered list items, but the only sepa
 ## Blocks
 Blocks join any number of statements together.  
 
-function boddies, if then else, and do or while looks all take blocks, not single statements.
+function boddies, `:if` - `:else`, and `:loop` all take blocks, not single statements.
 
 Blocks do not return values.
 
@@ -63,33 +63,15 @@ Blocks do not return values.
 ### Call types
 Call and return inline
 
-    :call
+    <FunctionName>(<ParameterList>) [| <PromiseResult>]
 
 Event based asyncronous on the same thread 
 
-    :callAsync
+    :startAsync  <FunctionName>(<ParameterList>) [| <PromiseResult>]
 
 Run on a given thread or threadpool 
 
-    :callThread
-        [thread or threadPool]
-
-### Function call ends
-End and ignore any function return
-
-    :invoke
-
-End and assign the return
-
-    :receive [variable]
-
-Continue processing on the same event ro thread
-
-    :continueWithResult
-        [return variable]
-        ...
-    :invoke
-
+    [ThreadStruct]:startAsync <FunctionName>(<ParameterList>) [| <PromiseResult>]
 
 
 ## Promise
@@ -113,6 +95,7 @@ Turn an error code into a localized error message
 
 Result
 * Attempting to use result does a wait.
+* If the function errored. Functions can specify their `errored` return.
 
 
 ### Handling a retryable file open error iteratively:
@@ -128,7 +111,8 @@ Result
             filePath
         ) | openFileHandle
 
-        :if (openFileHandle.Failed) {
+        :test (openFileHandle.Failed)
+        :if  {
            ui:ShowErrorMessage :uiThread (
                 openFileHandle.Error
             ) | shouldRetry
@@ -136,7 +120,7 @@ Result
             :return openFileHandle
         }
 
-        :loopExit (:not(shouldRetry))
+        :test (:not(shouldRetry)) :loopExit 
     }
 }
 ```
@@ -150,7 +134,8 @@ Result
     s:openFile :async (
         filePath
     ) :continueWith (openFileHandle) {
-        :if (openFileHandle.Failed) {
+        :test (openFileHandle.Failed)
+        :if  {
             ui:ShowErrorMessage :uiThread (
                 openFileHandle.Error
             ) :continueIf {
@@ -184,7 +169,9 @@ Import modules have a UUID and the namespace they will use.  The suggested names
 ## Functional
 Functions are first class objects. Functions can be passed into function calls.  Functions can return fucntions.
 
-In general Curying is avoided, but making closures is supported. This is often necessary to fit existing interfaces. 
+Functions will tail call when possible.
+
+In general Curying is avoided, but making closures is supported. Closures are often necessary to fit existing interfaces. 
 
 ## Block structured
 Key words start and end blocks.  This prevents any scoping amgiguity.
@@ -209,26 +196,25 @@ No operators.
 ## :and & :or
 These are not functions,  They shortcut like C languages. (A true value ends the :or, a false value ends the :and)
 
-:and makes a block ending with :endAnd
+:and uses a founction call like parameter block.  (Remember it early exits on a false value!)
 
-    :and
-        s:IsInputWaiting()
+    :and (
+        s:IsInputWaiting(),
         s:less(
             5
             myVar
-        )
+        ),
         myFlag
-    :endAnd
-:or makes a block ending with :endOr
-
-    :or
-        myFirstFlag
-        mySecondFlag
+    )
+:or uses a founction call like parameter block.  (Remember it early exits on a false value!)
+    :or (
+        myFirstFlag,
+        mySecondFlag,
         s:grater(
             myNumber
             7.0
-        )
-    :endOr
+        ),
+    )
 
 
 There is no valid mathematical presidence order when mixing numberspaces. (Bitflags or logical operations mixing with numeric operations.) Enforcing an order in the compiler just makes more syntax rules to remember.
