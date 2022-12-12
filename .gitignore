@@ -39,6 +39,7 @@
 
 # Project user files
 *.vcproj.user
+*.vcxproj.user
 
 # Build folders
 **/Debug/*
