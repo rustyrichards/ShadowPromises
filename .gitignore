@@ -11,7 +11,7 @@
 *.obj
 *.idb
 *.pdb
-_IsIncrementalBuild
+**/_IsIncrementalBuild
 
 # Precompiled Headers
 *.gch
@@ -41,8 +41,8 @@ _IsIncrementalBuild
 *.vcproj.user
 
 # Build folders
-Debug/*
-Release/*
-.vs/*
-x64/*
-*.tlog/*
+**/Debug/*
+**/Release/*
+**/.vs/*
+**/64/*
+**/*.tlog/*
