@@ -1,11 +1,17 @@
 # Prerequisites
 *.d
 
+# Diff/merge backup
+*.bak
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
 *.obj
+*.idb
+*.pdb
+_IsIncrementalBuild
 
 # Precompiled Headers
 *.gch
@@ -30,3 +36,13 @@
 *.exe
 *.out
 *.app
+
+# Project user files
+*.vcproj.user
+
+# Build folders
+Debug/*
+Release/*
+.vs/*
+x64/*
+*.tlog/*
