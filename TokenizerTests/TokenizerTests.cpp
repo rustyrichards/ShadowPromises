@@ -34,7 +34,7 @@ namespace TokenizerTests
 			Logger::WriteMessage("In TokenizeOneLine");
 			auto source = std::istringstream("5.0|var1 # Assigning to var1");
 
-			handleCommandlineAndTokenize(shadowPromisesTokenizer, source, std::cout);
+			shadowPromisesTokenizer.tokenize(source);
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("5.0"sv, tokenIter->tokenString);
@@ -88,7 +88,7 @@ namespace TokenizerTests
 			// ste stringstream is just like TokenizeOneLine except it uses \n as the separators
 			auto source = std::istringstream("5.0\r\n|\nvar1\r\n# Assigning to var1");
 
-			handleCommandlineAndTokenize(shadowPromisesTokenizer, source, std::cout);
+			shadowPromisesTokenizer.tokenize(source);
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("5.0"sv, tokenIter->tokenString);
@@ -137,7 +137,7 @@ namespace TokenizerTests
 				"}\n"
 			);
 
-			handleCommandlineAndTokenize(shadowPromisesTokenizer, source, std::cout);
+			shadowPromisesTokenizer.tokenize(source);
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual(":test"sv, tokenIter->tokenString);
@@ -300,7 +300,7 @@ namespace TokenizerTests
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::IsFalse(shadowPromisesTokenizer.tokens.empty(), L"There should be some tokens from the memory mapped file.");
 
-			Assert::AreEqual("+'Line 1 of multi-line string\nLine 2 of multi-line string' :test\n'"sv, tokenIter->tokenString);
+			Assert::AreEqual("+'Line 1 of multi-line string\nLine 2 of multi-line string'"sv, tokenIter->tokenString);
 			Assert::AreEqual((int)Token::TokenType::string, tokenIter->typeAndFlags.type);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
