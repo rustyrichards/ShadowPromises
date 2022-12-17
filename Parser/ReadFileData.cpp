@@ -48,7 +48,11 @@ const char* ReadFileData::readInFile(boost::filesystem::path filePath)
 
 	mappedFile = new mapped_file_source();
 
-	mappedFile->open(filePath);
+	// Open the file mapping read-only.
+	auto parms = basic_mapped_file_params(filePath);
+	parms.flags = mapped_file_base::mapmode::readonly;
+
+	mappedFile->open(parms);
 
 
 	usedByteCount = byteCount = mappedFile->size();

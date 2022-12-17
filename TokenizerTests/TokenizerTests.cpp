@@ -250,9 +250,10 @@ namespace TokenizerTests
 			Logger::WriteMessage("In TokenizeMultiLineString");
 
 			// A valid multi line string
-			shadowPromisesTokenizer.tokenize("+'Line 1 of multi-line string\n"
-				"Line 2 of multi-line string' :test\n"sv
-			);
+			auto strBuffer = new string("+'Line 1 of multi-line string\n"
+				"Line 2 of multi-line string' :test\n");
+
+			shadowPromisesTokenizer.tokenize(string_view(strBuffer->c_str(), strBuffer->length()));
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("+'Line 1 of multi-line string\nLine 2 of multi-line string'"sv, tokenIter->tokenString);
@@ -268,6 +269,23 @@ namespace TokenizerTests
 
 			tokenIter++;
 			Assert::AreEqual((int)Token::TokenType::endOfInput, tokenIter->typeAndFlags.type);
+
+			// Make sure the token.tokenString really just points into the source buffer.
+			// Changing all the source charecers to ' ' should blank out the  tokens!
+			auto runner = strBuffer->begin();
+			auto end = strBuffer->end();
+			while (runner != end)
+			{
+				if (0 != *runner) *runner = ' ';
+				runner++;
+			}
+
+			// Now all the tokens should have as many ' ' as they had characters.
+			tokenIter = shadowPromisesTokenizer.tokens.begin();
+			Assert::AreEqual("                                                          "sv, tokenIter->tokenString);
+
+			tokenIter++;
+			Assert::AreEqual("     "sv, tokenIter->tokenString);
 
 			shadowPromisesTokenizer.cleanup();
 
