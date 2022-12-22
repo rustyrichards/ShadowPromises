@@ -65,18 +65,6 @@ namespace TokenizerTests
 			Assert::AreEqual((int)Token::Token::endOfInput, tokenIter->typeAndFlags.type);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)31, tokenIter->startingCharacter);
-
-			//// Wipe the buffer with L' '
-			//char* start = shadowPromisesTokenizer.inputBuffer;
-			//char* end = start + shadowPromisesTokenizer.inputBufferSize;
-			//while (start < end)
-			//{
-			//	*(start++) = L' ';
-			//}
-
-			//// The tonken should still point into the buffer, so it will be blank too.
-			//tokenIter = shadowPromisesTokenizer.tokens.begin();
-			//Assert::AreEqual("   "sv, tokenIter->tokenString);
 		}
 
 		TEST_METHOD(TokenizeMultiLine)

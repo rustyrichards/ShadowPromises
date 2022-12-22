@@ -385,14 +385,12 @@ const char* Tokenizer::findNextToken(
 
 
 
-void Tokenizer::internalTokenize(const char* start)
+void Tokenizer::internalTokenize(const char* start, const char* end)
 {
     long lineNumber = 1;
     long characterNumber = 1;
 
     bool wasLastIncomplete = false;
-
-    const char* end = readData.end();
 
     while (start < end)
     {
@@ -431,20 +429,29 @@ void Tokenizer::internalTokenize(const char* start)
 
 void Tokenizer::tokenize(istream& input)
 {
-    const char* start = readData.readInFile(input);
-    Tokenizer::internalTokenize(start);
+    auto readData = new ReadFileData();
+    sourceFileData.push_back(readData);
+
+    const char* start = readData->readInFile(input);
+    Tokenizer::internalTokenize(start, readData->end());
 }
 
 void Tokenizer::tokenize(boost::filesystem::path filePath)
 {
-    const char* start = readData.readInFile(filePath);
-    Tokenizer::internalTokenize(start);
+    auto readData = new ReadFileData();
+    sourceFileData.push_back(readData);
+
+    const char* start = readData->readInFile(filePath);
+    Tokenizer::internalTokenize(start, readData->end());
 }
 
 void Tokenizer::tokenize(string_view stringBuffer)
 {
-    const char* start = readData.useExistingBuffer(stringBuffer.data(), stringBuffer.size());
-    Tokenizer::internalTokenize(start);
+    auto readData = new ReadFileData();
+    sourceFileData.push_back(readData);
+
+    const char* start = readData->useExistingBuffer(stringBuffer.data(), stringBuffer.size());
+    Tokenizer::internalTokenize(start, readData->end());
 }
 
 
@@ -459,4 +466,7 @@ void Tokenizer::cleanup()
     if (0 <tokens.size()) tokenRecovery.assign(tokens.begin(), tokens.end());
     
     tokens.clear();
+
+    for (auto it = sourceFileData.begin(); it != sourceFileData.end(); ++it) delete *it;
+    sourceFileData.clear();
 }

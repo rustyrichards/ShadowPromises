@@ -112,7 +112,7 @@ public:
 class EXPORT Tokenizer {
 private:
     // The tokenize functions handle setting up the readData
-    void internalTokenize(const char* start);
+    void internalTokenize(const char* start, const char* end);
 
 public:
     // configuration flags
@@ -125,7 +125,7 @@ public:
     map<string_view, Token::TypeAndParsingFlags>& keywordTokens;
 
 
-    ReadFileData readData;
+    list<ReadFileData*> sourceFileData;
 
     vector<Token>& tokens;
 
