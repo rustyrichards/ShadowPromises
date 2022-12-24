@@ -160,6 +160,7 @@ The language core namespaces are 1 character
 1. **:** core language keywords - NOTE: keywords are not functions.<br>Keywords have the empty namespace.
 2. **s:** core library
 3. **g:** singleton variables
+4. **opt:** compiler/build options
 
 Import modules have a UUID and the namespace they will use.  The suggested namespace will be in the library's comment block.
 
@@ -241,3 +242,34 @@ Mathematical functions should be able to take multiple paramters.
         1
     )
 ```
+
+## :test
+Test blocks are built in to the language.  They are ony compiled in a test build.
+```
+:test [name] {
+    ...
+}
+```
+When building for test a sorted list of all the `:test` blocks are made.  They are storted by thier `[name]` and started in alphabetical order.  (If paralized that does dnot define the completion order!)
+
+## :option
+Conditional compilation is controled by
+```
+:option [namespacedDefined] {
+    ...
+}
+```
+For example:
+```
+:option opt:DEBUG {
+    ui:ShowErrorMessage (
+        "This should not happen"
+    )
+}
+```
+
+## :define
+`:define [flagName]` sets [flagName] on for contitional compilation with the :option statement.  In most cases the conditional compilation flags should come from the build environment, but sometimes they need to be manually turned on or off.
+
+## :undefine
+`:undefine [flagName]` sets [flagName] off for contitional compilation with the :option statement.  In most cases the conditional compilation flags should come from the build environment, but sometimes they need to be manually turned on or off.

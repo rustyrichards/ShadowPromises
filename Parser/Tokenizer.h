@@ -70,11 +70,15 @@ public:
 
         value = 128,
         needsValue = 256,
+        compileFlag = 512,      // For use in contidional compilation.  Most should come from the build environment, but they can be set or unset in modules.
 
         // token following order
-        needsParameters = 1024,
-        needsBlock = 2048,
-        needsIdentifier = 4096,
+        needsParameters = 16384,
+        needsIdentifier = 32768,
+        needsName = 65536,
+        needsCompileFlag = 131072,
+
+        needsBlock = 1073741824,    //2^30
     };
 
     struct EXPORT TypeAndParsingFlags {

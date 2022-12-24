@@ -115,6 +115,12 @@ namespace TokenizerTests
 
 			Logger::WriteMessage("In TokenizeAllTypes");
 			auto source = std::istringstream(
+				":define DEBUG\n"
+				"\n"
+				":option DEBUG {\n"
+				"  2.0 | z\n"
+				"}\n"
+				"\n"
 				":test(:equals(x y)) # :test and :if on separate lines\n"
 				":if {\n"
 				"  1.0 | z\n"
@@ -123,11 +129,49 @@ namespace TokenizerTests
 				":loop {\n"
 				"  :test(true) :exit\n"
 				"}\n"
+				"\n"
+				":undefine DEBUG\n"
 			);
 
 			shadowPromisesTokenizer.tokenize(source);
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
+			Assert::AreEqual(":define"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual("DEBUG"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual(":option"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual("DEBUG"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual("{"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::block_start, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual("2.0"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::number, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual("|"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::assignment, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual("z"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual("}"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::TokenType::block_end, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
 			Assert::AreEqual(":test"sv, tokenIter->tokenString);
 			Assert::AreEqual((int)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
 
@@ -226,6 +270,14 @@ namespace TokenizerTests
 			tokenIter++;
 			Assert::AreEqual("}"sv, tokenIter->tokenString);
 			Assert::AreEqual((int)Token::TokenType::block_end, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual(":undefine"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+
+			tokenIter++;
+			Assert::AreEqual("DEBUG"sv, tokenIter->tokenString);
+			Assert::AreEqual((int)Token::Token::TokenType::identifier, tokenIter->typeAndFlags.type);
 
 			tokenIter++;
 			Assert::AreEqual((int)Token::TokenType::endOfInput, tokenIter->typeAndFlags.type);

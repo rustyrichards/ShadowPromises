@@ -60,7 +60,29 @@ extern "C++" EXPORT Tokenizer& initShadowPromisesTokenizer()
                     Token::TokenType::keyword,
                     Token::ParsingFlags::needsParameters
                 )),
-            make_pair("{"sv, 
+            make_pair(":test"sv,
+                Token::TypeAndParsingFlags(
+                    Token::TokenType::keyword,
+                    Token::ParsingFlags::needsName |
+                    Token::ParsingFlags::needsBlock
+                )),
+            make_pair(":option"sv,
+                Token::TypeAndParsingFlags(
+                    Token::TokenType::keyword,
+                    Token::ParsingFlags::needsCompileFlag |
+                    Token::ParsingFlags::needsBlock
+                )),
+            make_pair(":define"sv,
+                Token::TypeAndParsingFlags(
+                    Token::TokenType::keyword,
+                    Token::ParsingFlags::compileFlag
+                )),
+            make_pair(":undefine"sv,
+                Token::TypeAndParsingFlags(
+                    Token::TokenType::keyword,
+                    Token::ParsingFlags::compileFlag
+                )),
+            make_pair("{"sv,
                 Token::TypeAndParsingFlags(Token::TokenType::block_start)),
             make_pair("}"sv, 
                 Token::TypeAndParsingFlags(Token::TokenType::block_end)),
