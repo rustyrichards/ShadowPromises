@@ -8,7 +8,7 @@
 #include "ShadowPromisesTokenizer.h"
 #include <iostream>
 
-extern "C" EXPORT Tokenizer & initShadowPromisesTokenizer()
+extern "C++" EXPORT Tokenizer& initShadowPromisesTokenizer()
 {
     Tokenizer* spTokenizer = (new Tokenizer(
         new map<string_view, Token::TypeAndParsingFlags>({

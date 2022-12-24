@@ -52,7 +52,7 @@ public:
         badString,
     };
 
-    enum EXPORT ParsingFlags
+    enum ParsingFlags
     {
         none = 0,
 
@@ -89,7 +89,7 @@ public:
     bool            hasScope;
     long            startingLine;
     long            startingCharacter;
-    string_view    tokenString;
+    string_view     tokenString;
     TypeAndParsingFlags typeAndFlags;
 
     void Init(

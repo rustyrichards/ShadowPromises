@@ -31,8 +31,8 @@ public:
 		mappedFile(NULL),
 		bufferIsAllocated(false),
 		buffer(NULL),
-		byteCount(0),
-		usedByteCount()
+		usedByteCount(),
+		byteCount(0)
 	{
 	}
 

@@ -3,10 +3,10 @@
 
 #include "Tokenizer.h"
 
-extern "C" EXPORT Tokenizer & initShadowPromisesTokenizer();
+extern "C++" EXPORT Tokenizer& initShadowPromisesTokenizer();
 
 extern "C" EXPORT void dumpTokens(
     std::ostream& output, 
     std::vector<Token> tokens);
 
-#endif SHADOW_PROMISES_TOKENIZER_H_INCLUDED
+#endif //SHADOW_PROMISES_TOKENIZER_H_INCLUDED
