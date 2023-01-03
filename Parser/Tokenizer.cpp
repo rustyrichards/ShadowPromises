@@ -1,10 +1,9 @@
 #include "pch.h"
-#include "Tokenizer.h"
 
 #include <iostream>
 #include <fstream>      // ifstream
 
-bool Token::IsKeyword()
+bool Token::isKeyword()
 {
     return keyword <= typeAndFlags.type && typeAndFlags.type < keyword + sectionSize;
 }
@@ -19,7 +18,7 @@ bool Token::isBlock()
     return block <= typeAndFlags.type && typeAndFlags.type < block + sectionSize;
 }
 
-void Token::Init(
+void Token::init(
     long inStartingLine, 
     long inStartingCharacter, 
     int inType,
@@ -41,50 +40,132 @@ Token::Token(
     hasScope(false),
     startingLine(inStartingLine),
     startingCharacter(inStartingCharacter),
-    tokenString(""),
+    tokenString(""sv),
     typeAndFlags(inType, inParsingFlags)
 {}
 
-Token::TypeAndParsingFlags::TypeAndParsingFlags(
-    int inType,
-    int inFlags)
+
+long Token::checkHexNumberToken()
 {
-    type = inType;
-    parsingFlags = inFlags;
+    if (2 < tokenString.length())
+    {
+        auto iter = tokenString.begin();
+        if ('0' == *(iter++)) {
+            if ('X' == *iter || 'x' == *iter)
+            {
+                typeAndFlags.type = Token::hexNumber;
+                while (++iter < tokenString.end()) 
+                {
+                    if (!isdigit(*iter) &&
+                        ('a' > *iter || *iter > 'f') &&
+                        ('A' > *iter || *iter > 'F'))
+                    {
+                        typeAndFlags.type = Token::badNumber;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return typeAndFlags.type;
 }
 
+// NOTE: checkNumberToken returns typeAndFlags.type):
+// If typeAndFlags.type is something other than Token::unknownToken => return out and do not test
+// Otherwise
+//          Token::number => A valid number
+//          Token::badNumber => starts wiith a number prefix ('.', '-' or a digit) but is not valid
+//          Token::unknownToken => something not a number
+long Token::checkNumberToken()
+{
+    if (Token::unknownToken != typeAndFlags.type ||
+        Token::unknownToken != checkHexNumberToken())
+    {
+        return  typeAndFlags.type;
+    }
+
+    auto iter = tokenString.begin();
+
+    bool dotAllowed = true;
+    bool eAllowed = true;
+    char lastChr = 0;
+
+    while (iter != tokenString.end())
+    {
+        if (*iter == L'.')
+        {
+            // "." ia a bad number, so is "-.". Both will be corrected by a following digit
+            if (0 == lastChr || '-' == lastChr) typeAndFlags.type = Token::badNumber;
+
+            if (!dotAllowed)
+            {
+                // multiple '.' or '.' after 'e' not a number
+                typeAndFlags.type = Token::badNumber;
+                break;
+            }
+            dotAllowed = false;
+        }
+        else if (*iter == L'e' || *iter == L'e')
+        {
+            if (0 == lastChr) 
+            {
+                // starts with 'e' not a number
+                typeAndFlags.type = Token::unknownToken;
+                break;
+            }
+
+            // 'e' not followed by a digit is bad.
+            typeAndFlags.type = Token::badNumber;
+
+            if (!eAllowed || (!isdigit(lastChr) && lastChr != '.'))
+            {
+                // multiple 'e' is invalid, 'e' after anything other than a digit or '.' is invalid
+                break;
+            }
+
+            eAllowed = false;   // There can only be one 'e' exponential, 
+            dotAllowed = false; // No more '.' after the exponent
+        }
+        else if (*iter == '-')
+        {
+            // '-' not followed by a digit is bad.
+            typeAndFlags.type = Token::badNumber;
+
+            if (0 != lastChr && 'e' != lastChr && 'E' != lastChr)
+            {
+                // '-' is only allowed at the start or right after 'e'
+                break;
+            }
+        }
+        else if (isdigit(*iter))
+        {
+            // If we have encountered a digit, this is a valid potential number end - Valid numbers must always end with a digit.
+            typeAndFlags.type = Token::number;
+        }
+        else
+        {
+            typeAndFlags.type = (0 == lastChr)
+                ? Token::unknownToken // does not start with a number character - not a number token
+                : Token::badNumber; // starts with a number character - then something not a number - not valid.
+            break;
+        }
+        lastChr = *(iter++);
+    }
+
+    return typeAndFlags.type;
+}
+
+
+token_vector::token_vector() : vector<Token>()
+{}
 
 Tokenizer::Tokenizer(map<string_view, Token::TypeAndParsingFlags>* inKeywordTokens) :
     allowDoubleQuoteStrings(true),
     allowSingleQuoteStrings(true),
     scopeChar(0),
     keywordTokens(*inKeywordTokens),
-    tokens(*(new vector<Token>())),
-    tokenRecovery(*(new vector<Token>()))
+    tokens(*(new token_vector()))
 {}
-
-bool Tokenizer::testIsNumber(string_view& maybeNumber)
-{
-    auto iter = maybeNumber.begin();
-
-    bool wasDotFound = false;
-    while (iter != maybeNumber.end())
-    {
-        if (*iter == L'.')
-        {
-            if (wasDotFound) return false;  // multiple '.' - not a number
-            wasDotFound = true;
-        }
-        else if (!iswdigit(*iter))
-        {
-            return false;   // not all digits and '.'
-        }
-        iter++;
-    }
-
-    // "." is not a number!
-    return maybeNumber.length() > 1 || !wasDotFound;
-}
 
 
 
@@ -98,45 +179,39 @@ void Tokenizer::finishToken(
 
     token.tokenString = string_view(&*start, end - start);
 
-   if (Token::unknown == token.typeAndFlags.type)
+    if (Token::unknownToken == token.checkNumberToken())
     {
-        if (L'#' == *start)
+        auto foundItem = keywordTokens.find(token.tokenString);
+        if (keywordTokens.end() != foundItem)
         {
-            token.typeAndFlags.type = Token::comment;
-            token.typeAndFlags.parsingFlags = Token::ParsingFlags::none;
-
-            const char* runner = start;
-            do
-            {
-                runner++;
-
-            } while (L'\r' != *runner && L'\n' != *runner && runner < end);
-            token.tokenString = string_view(&*start, runner - start);
-
-            // Now advance past the token we made.
-            start = runner;
-        }
-        else if (testIsNumber(token.tokenString))
-        {
-            token.typeAndFlags.type = Token::number;
-            // numbers supply their value
-            token.typeAndFlags.parsingFlags = Token::ParsingFlags::value;
+            token.typeAndFlags = foundItem->second;
         }
         else
         {
-            auto foundItem = keywordTokens.find(token.tokenString);
-            if (keywordTokens.end() != foundItem)
-            {
-                token.typeAndFlags = foundItem->second;
-            }
-            else
-            {
-                // Identifiers supply their value
-                token.typeAndFlags.type = Token::identifier;
-                token.typeAndFlags.parsingFlags = Token::ParsingFlags::value;
-            }
+            // Identifiers supply their value
+            token.typeAndFlags.type = Token::identifier;
+            token.typeAndFlags.parsingFlags = Token::ParsingFlags::value;
         }
     }
+    // else the token.typeAndFlags is set.
+
+    start = end;
+}
+
+void Tokenizer::readInComment(
+    Token& token,
+    const char*& runner,
+    const char* end,
+    long& characterCount)
+{
+    token.typeAndFlags.type = Token::comment;
+
+    const char* start = runner;
+
+    while (++runner < end && '\r' != *runner && '\n' != *runner);
+
+    characterCount += runner - start;
+    token.tokenString = string_view(start, runner - start);
 }
 
 bool Tokenizer::readInString(
@@ -207,26 +282,20 @@ void Tokenizer::handleCurrentCharacter(
 {
     char current = *runner;
 
-    // switch can be preform better then the lots of if(s)
+    // switch can preform better then the lots of if(s)
     if (!handleCurrentCharacterOverride(token, start, runner, end, lineCount, characterCount))
     {
         switch (current)
         {
         case L'#':
-            if (start == runner)
-            {
-                // If the token is not started this is a line comment
-                finishToken(token, runner, end);
-
-                // In most cases the line will end, and we will just go back to characterCount 1.
-                // Changing the characterCount here matters for the endOfInput!
-                characterCount += (long)token.tokenString.length();
-            }
-            else
+            if (start != runner)
             {
                 // The token was started. save that then pickup the comment
                 finishToken(token, start, runner);
             }
+            // Read in the  line comment
+            readInComment(token, runner, end, characterCount);
+            start = runner;
             break;
         case L'\n':
         case L'\r':
@@ -255,6 +324,32 @@ void Tokenizer::handleCurrentCharacter(
                 finishToken(token, start, runner);
             }
             break;
+        case L'+':  // +" of +' is multi line strings
+            if (start != runner)
+            {
+                finishToken(token, start, runner);
+            }
+
+            //  Read in the multi-line string
+            characterCount++;
+            runner++;
+            if (runner < end)
+            {
+                char stringStart = *runner;
+                if ((allowDoubleQuoteStrings || L'"' != stringStart) &&
+                    (allowSingleQuoteStrings || L'\'' != stringStart))
+                {
+                    bool isValidString = readInString(stringStart, runner, end, lineCount, characterCount, true /* Multiline */);
+                    finishToken(token, start, runner, (isValidString) ? Token::string : Token::badString);
+                }
+                else
+                {
+                    // + without the following string character is badPunctuation
+                    token.typeAndFlags.type = Token::badPunctuation;
+                    finishToken(token, start, runner);
+                }
+            }
+        break;
         case L'\'':
         case L'"':
             // Trick - fall through to the punctuation if the quote is not supported.
@@ -262,45 +357,22 @@ void Tokenizer::handleCurrentCharacter(
                 (allowSingleQuoteStrings || L'\'' != current))
             {
                 characterCount++;
-                if (start == runner)
-                {
-                    bool isValidString = readInString(current, runner, end, lineCount, characterCount);
-                    finishToken(token, start, runner, (isValidString) ? Token::string : Token::badString);
-                }
-                else
+                if (start != runner)
                 {
                     // The token is started.  The quote ends the token.
                     finishToken(token, start, runner);
                 }
+
+                // Read in the string token
+                bool isValidString = readInString(current, runner, end, lineCount, characterCount);
+                finishToken(token, start, runner, (isValidString) ? Token::string : Token::badString);
                 break;
             }
             // else unsupported quote will fall throught to punctuation
 
-        case L'+':  // +" of +' is multi line strings
-            characterCount++;
-            if (start == runner)
-            {
-                //  If the token is not started this punctuation will be the token
-                runner++;
-                if (runner != end)
-                {
-                    char stringStart = *runner;
-                    if ((allowDoubleQuoteStrings || L'"' != stringStart) &&
-                        (allowSingleQuoteStrings || L'\'' != stringStart))
-                    {
-                        bool isValidString = readInString(stringStart, runner, end, lineCount, characterCount, true /* Multiline */);
-                        finishToken(token, start, runner, (isValidString) ? Token::string : Token::badString);
-                    }
-                }
-            }
-            else    // The text before the punctuation is the token
-            {
-                finishToken(token, start, runner);
-            }
-            break;
-
         // Basically these punctuation characters are ispunct except for 
-        //  '_' which is valid in identifiers, 
+        //  '_' which is valid in identifiers,
+        //  '-' is valid starting numbers and exponents, and can be other than the first characer in an identifier
         //  '#' for comments, '"' and '\'' for strings,
         //  ',' for numbers
         case L'!':
@@ -311,7 +383,6 @@ void Tokenizer::handleCurrentCharacter(
         case L')':
         case L'*':
         case L',':
-        case L'-':
         case L'/':
         case L':':
         case L';':
@@ -374,12 +445,6 @@ const char* Tokenizer::findNextToken(
         handleCurrentCharacter(token, start, runner, end, lineCount, characterCount);
     }
 
-    // End of line ends the token
-    if (token.typeAndFlags.type == Token::incomplete && runner == end && start != runner && !iswspace(*start))
-    {
-        finishToken(token, start, end);
-    }
-
     return runner;
 }
 
@@ -394,20 +459,7 @@ void Tokenizer::internalTokenize(const char* start, const char* end)
 
     while (start < end)
     {
-        if (tokens.empty() || Token::incomplete != tokens.back().typeAndFlags.type)
-        {
-            if (!tokenRecovery.empty())
-            {
-                Token& toMove = tokenRecovery.back();
-                tokenRecovery.pop_back(); 
-                toMove.Init(lineNumber, characterNumber);
-                tokens.push_back(toMove);
-            }
-            else
-            {
-                tokens.emplace_back(lineNumber, characterNumber);
-            }
-        }
+        tokens.emplace_back(lineNumber, characterNumber);
 
         start = findNextToken(tokens.back(), start, end, lineNumber, characterNumber);
 
@@ -419,7 +471,7 @@ void Tokenizer::internalTokenize(const char* start, const char* end)
     // NOTE: wasLastIncomplete won't be true unless tokens.back() exists!
     if (wasLastIncomplete && Token::incomplete == tokens.back().typeAndFlags.type && tokens.back().tokenString.length() == 0)
     {
-        tokens.back().Init(lineNumber, characterNumber, Token::endOfInput);
+        tokens.back().init(lineNumber, characterNumber, Token::endOfInput);
     }
     else
     {
@@ -436,7 +488,7 @@ void Tokenizer::tokenize(istream& input)
     Tokenizer::internalTokenize(start, readData->end());
 }
 
-void Tokenizer::tokenize(boost::filesystem::path filePath)
+void Tokenizer::tokenize(boost::filesystem::path& filePath)
 {
     auto readData = new ReadFileData();
     sourceFileData.push_back(readData);
@@ -457,14 +509,6 @@ void Tokenizer::tokenize(string_view stringBuffer)
 
 void Tokenizer::cleanup()
 {
-    auto runner = tokens.begin();
-    auto end = tokens.end();
-    while (runner != end)
-    {
-        (runner++)->Init(1, 1);
-    }
-    if (0 <tokens.size()) tokenRecovery.assign(tokens.begin(), tokens.end());
-    
     tokens.clear();
 
     for (auto it = sourceFileData.begin(); it != sourceFileData.end(); ++it) delete *it;

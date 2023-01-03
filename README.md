@@ -63,40 +63,96 @@ Blocks do not return values.
 ### Call types
 Call and return inline
 
-    <FunctionName>(<ParameterList>) [| <PromiseResult>]
+    /FunctionName\(/ParameterList\) [| /PromiseResult\]
 
 Event based asyncronous on the same thread 
 
-    :startAsync  <FunctionName>(<ParameterList>) [| <PromiseResult>]
+    :startAsync  /FunctionName\(/ParameterList\) [| /PromiseResult\]
 
 Run on a given thread or threadpool 
 
-    [ThreadStruct]:startAsync <FunctionName>(<ParameterList>) [| <PromiseResult>]
+    [ThreadStruct]:startAsync /FunctionName\(/ParameterList\) [| /PromiseResult\]
 
 
 ## Promise
 All functions return a result with the following:
 
 Failed
-*  bool => True if the function failed
+*  bool =\ True if the function failed
 
 Retryable
-* bool => True if the the error can be resonably corrected.  To make it easier on the user do not set retryable on success.  (e.g. missing removable disk, out of diskspace.  Not other file write errors.)
+* bool =\ True if the the error can be resonably corrected.  To make it easier on the user do not set retryable on success.  (e.g. missing removable disk, out of diskspace.  Not other file write errors.)
 
 ErrorCode
-* String => [module UUID] [error Id]
+* String =\ [module UUID] [error Id]
 
 Turn an error code into a localized error message
 
     :call
         s:ErrorCode
     :receive | errorString
-* A function that returns a String => The message if the current g:locale or g:language can be looked up followed by \n[resource name]  e.g. a file open to "temp/foo.txt" fails g:local is "DE:de", g:language is "de fr es" but the there are only english resources in the module so error message would be<br>"\ntemp/foo.txt"<br>This `ErrorMessage()` should cache string for repeated calls.
+* A function that returns a String =\ The message if the current g:locale or g:language can be looked up followed by \n[resource name]  e.g. a file open to "temp/foo.txt" fails g:local is "DE:de", g:language is "de fr es" but the there are only english resources in the module so error message would be<br>"\ntemp/foo.txt"<br>This `ErrorMessage()` should cache string for repeated calls.
 
 Result
 * Attempting to use result does a wait.
 * If the function errored. Functions can specify their `errored` return.
 
+## Defining Functions
+```
+<
+    /protptype varaibles\
+>
+{
+    /function body\
+}
+```
+
+## Function examples
+Make the function /double\
+```
+<
+    float in
+>
+{
+    :return
+        multiply(
+            in 
+            in
+        )
+} | double
+```
+
+Make and call a sum function using tail recursion
+```
+<
+    float[] in
+>
+{
+    :if (:isEmpty(in))
+    :then {
+        :return 0.0
+    }
+    :if (:has1(in))
+    :then {
+         :return in.first
+    }
+    :else
+    {
+        :return
+            :add(
+                in.first
+                :self(in.rest)
+            )
+    }
+} | sum
+
+sum( 
+    1.0
+    2.0
+    3.0
+    78.9
+)
+```
 
 ### Handling a retryable file open error iteratively:
 
