@@ -1,4 +1,4 @@
-﻿#ifndef PARSER_H_INCLUDED
+#ifndef PARSER_H_INCLUDED
 #define PARSER_H_INCLUDED
 
 #include "framework.h"

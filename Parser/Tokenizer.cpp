@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include <iostream>
 #include <fstream>      // ifstream
@@ -456,6 +456,12 @@ void Tokenizer::internalTokenize(const char* start, const char* end)
     long characterNumber = 1;
 
     bool wasLastIncomplete = false;
+
+    // Skip UTF8 BOM if it exists
+    if ((start + 3 <= end) && (0xEF == (unsigned char)*start) && (0xBB == (unsigned char)*(start + 1)) && (0xBF == (unsigned char)*(start + 2)))
+    {
+        start += 3;
+    }
 
     while (start < end)
     {
