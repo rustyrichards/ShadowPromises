@@ -2,7 +2,8 @@
 Line 2 of multi-line string' # The string is complete
 
 5.5e2 | a
-.2e-1 | b
+2e-2 | b
+-.2e-1 | b
 0xABCD | c
 'test ▲\u{25B2} 𝅘𝅥\u{1D15F} \x{0d}\x{0a}' | d
 

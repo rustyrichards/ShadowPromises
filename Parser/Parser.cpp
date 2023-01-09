@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <cmath>
 #include <format>
+#include <limits>
 
 Token& Parser::genericBlock = *new Token(0, 0, Token::block_start, Token::blockFollows);
 
@@ -96,56 +97,75 @@ void ParseNode::decodeHexToDouble(string_view numberString)
 	val.doubleVal = (double)decodeHex(runner, end);
 }
 
-inline double adjustNumber(double value, int& digitsAfterdecimal, bool& isNegative)
+long long internalDecodeIntegralPart(string_view::const_iterator& runner, string_view::const_iterator& end, long& digitsAfterDecimal)
 {
-	if (0 < digitsAfterdecimal) value /= pow(10.0, digitsAfterdecimal);
-	digitsAfterdecimal = -1;
+    // Simplification trick  start digitsAfterDecimal very negative that way it will stay negative for any enterable number of digits.
+    // (You can't enter bilions of digits.)
+    // Only encountering '.' will cange it to 0 and start it moving to positive.
+    digitsAfterDecimal = LONG_MIN;
 
-	if (isNegative) value *= -1;
-	isNegative = false;
+    long long integralPart = 0;      // Keep out roundoff errors atleast until the exponent
 
-	return value;
+    bool isNegative = false;
+
+    while (runner != end)
+    {
+        if ('-' == *runner)
+        {
+            isNegative = !isNegative;	// Incase multiple negatives are allowed.
+        }
+        else if ('0' <= *runner && *runner <= '9')
+        {
+            integralPart *= 10L;
+            integralPart += *runner - '0';
+            digitsAfterDecimal++;
+        }
+        else if ('.' == *runner)
+        {
+            digitsAfterDecimal = 0;
+        }
+        else
+        {
+            break;
+        }
+        runner++;
+    }
+
+    // If the ',' was not found.  We have no digits after the decimal
+    if (0L > digitsAfterDecimal) digitsAfterDecimal = 0;
+
+    // Negate the value if an odd number of '-' were found.
+    return (isNegative) ? -integralPart : integralPart;
 }
 
 double internalDecodeExponentialToDouble(string_view::const_iterator& runner, string_view::const_iterator& end)
 {
-	double val = 0.0;
+	double val = NAN;
 
-	bool isNegative = false;
-	int digitsAfterdecimal = -1;
+    long digitsAfterDecimal = 0;
 
+    // Keep out roundoff errors atleast until the exponent
+    long long integralPart = internalDecodeIntegralPart(runner, end, digitsAfterDecimal);
 
-	while (runner != end)
+    long long base10Exponent = -digitsAfterDecimal;
+
+	if (runner != end &&  ('e' == *runner || 'E' == *runner))
 	{
-		if ('-' == *runner)
-		{
-			isNegative = !isNegative;	// Incase multiple negatives are allowed.
-		}
-		else if ('0' <= *runner && *runner <= '9')
-		{
-			val *= 10;
-			val += *runner - '0';
-			if (-1 < digitsAfterdecimal) digitsAfterdecimal++;
-		}
-		else if ('.' == *runner)
-		{
-			digitsAfterdecimal++;
-		}
-		else if ('e' == *runner || 'E' == *runner)
-		{
-			val = adjustNumber(val, digitsAfterdecimal, isNegative);
-
-			val *= pow(10.0, internalDecodeExponentialToDouble(++runner, end));
-			break;
-		}
-		runner++;
+        base10Exponent += internalDecodeIntegralPart(++runner, end, digitsAfterDecimal);
 	}
 
-	// If we did not have the exponent - adjust for the decimal
-	val = adjustNumber(val, digitsAfterdecimal, isNegative);
+    if (0 != base10Exponent)
+    {
+        val = (double)integralPart * pow(10.0, base10Exponent);
+    }
+    else
+    {
+        val = integralPart;
+    }
 
-	return val;
+    return val;
 }
+
 
 void ParseNode::decodeExponentialToDouble(string_view numberString)
 {
