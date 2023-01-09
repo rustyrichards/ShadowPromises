@@ -1,4 +1,4 @@
-+'Line 1 of multi-line string
+﻿+'Line 1 of multi-line string
 Line 2 of multi-line string' # The string is complete
 
 5.5e2 | a

@@ -1,4 +1,4 @@
-#ifndef READFILEDATA_H_INCLUDED
+﻿#ifndef READFILEDATA_H_INCLUDED
 #define READFILEDATA_H_INCLUDED
 
 #include "pch.h"

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Stupid windows DLL exporting of classes!
 #ifdef _WINDOWS

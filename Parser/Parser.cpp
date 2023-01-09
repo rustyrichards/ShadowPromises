@@ -453,8 +453,6 @@ ParseNode* Parser::internalParseParameterList(
 
 		if (NULL != current && current->hasNoError())
 		{
-			auto flags = current->getParsingFlags();
-
 			// The rejected keywords, functionReturn and selfCall mean it is not necessary to test the rest of the parsing flags here
 
 			auto nextType = pos->typeAndFlags.type;

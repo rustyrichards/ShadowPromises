@@ -1,4 +1,4 @@
-#ifndef TOKENIZER_H_INCLUDED
+﻿#ifndef TOKENIZER_H_INCLUDED
 #define TOKENIZER_H_INCLUDED
 
 #include "pch.h"

@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ReadFileData.h"
 
 void ReadFileData::dropMappedFileIfOpen(bool forceCleanupBuffer)
