@@ -9,6 +9,7 @@
 
 // add headers that you want to pre-compile here
 #include "framework.h"
+#include "interop.h"
 #include "Tokenizer.h"
 #include "Parser.h"
 #include "ShadowPromisesTokenizer.h"

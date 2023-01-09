@@ -6,11 +6,6 @@
 #include <iosfwd>
 #include <iostream>
 
-#ifdef _USRDLL
-#  define EXPORT __declspec(dllexport)
-#else
-#  define EXPORT __declspec(dllimport)
-#endif
 
 using namespace std;
 using namespace boost::iostreams;

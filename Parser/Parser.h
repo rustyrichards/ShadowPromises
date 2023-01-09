@@ -1,23 +1,54 @@
 #ifndef PARSER_H_INCLUDED
 #define PARSER_H_INCLUDED
 
-#ifdef _USRDLL
-#  define EXPORT __declspec(dllexport)
-#else
-#  define EXPORT __declspec(dllimport)
-#endif
-
 #include "framework.h"
 #include "Tokenizer.h"
 
 using namespace std;
 
+class EXPORT funct
+{
+
+};
 
 class EXPORT ParseNode
 {
+protected:
+	void decodeExponentialToDouble(string_view numberString);
+	void decodeHexToDouble(string_view numberString);
+	void decodeString(string_view maybeEscaped);
+	bool setEscapeValue(char*& dest, const char*& runner, const char* end);
+
 public:
-	Token& token;		// Note: token.typeAndFlags.type will be adjusted to the type that fits the token and parsing state.
-	ParseNode* next;
+	enum nodeType {
+		integerValue = 1,
+		doubleValue,
+		stringValue,
+		structValue,
+
+		functon,
+
+		value = 1024,	// less than value means it is a value type
+
+		statement,
+	};
+
+	union nodeValue {
+		nodeValue(double inVal) : doubleVal(inVal) {};
+		nodeValue(long inVal) : longVal(inVal) {};
+		nodeValue(string_view inVal) : stringVal(inVal) {};
+
+		long		longVal;
+		double		doubleVal;
+		string_view stringVal;
+		funct		functValue;
+	};
+
+	long		nodeType;
+	nodeValue	val;
+	char*		replacementStringBuffer;
+	Token&		token;		// Note: token.typeAndFlags.type will be adjusted to the type that fits the token and parsing state.
+	ParseNode*	next;
 
 	ParseNode* identifier;	// For nodes that need an identifier
 	ParseNode* parameters;	// For nodes that have a parameter list.  May be a parameter list variable
@@ -29,16 +60,7 @@ public:
 
 	inline long getType() { return (unsigned long)token.typeAndFlags.type; }
 	inline long getParsingFlags() { return (unsigned long)token.typeAndFlags.parsingFlags; }
-	inline void setType(Token::TokenType inType)
-	{
-		// Do not change to Token::unknownToken or anything less
-		// Do not change token.typeAndFlags.type if it is already marked as a failure
-		if (Token::unknownToken < inType &&
-			Token::failures < token.typeAndFlags.type)
-		{
-			token.typeAndFlags.type = inType;
-		}
-	}
+	void setType(Token::TokenType inType);
 
 	inline bool hasParsingFlags(long flags)
 	{
@@ -55,7 +77,10 @@ public:
 		return  token.hasFollowsFlags();
 	}
 
-
+	inline bool hasNoError()
+	{
+		return 0 == parsingError.length();
+	}
 
 	ParseNode(Token& inToken, Token::TokenType inType = Token::unknownToken);
 
@@ -65,6 +90,7 @@ public:
 		delete identifier;
 		delete parameters;
 		delete block;
+		delete[] replacementStringBuffer;
 	}
 };
 
@@ -90,6 +116,22 @@ public:
 
 protected:
 	static Token& genericBlock;
+
+	long parseFunctionCall(
+		long nextType,
+		ParseNode* current,
+		long depth,
+		long state);
+
+	long parseBlock(
+		long nextType,
+		ParseNode* current,
+		long depth,
+		long state);
+
+	ParseNode* internalParseParameterList(
+		long depth,
+		long state);
 
 	ParseNode* internalParse(
 		long depth = 0,

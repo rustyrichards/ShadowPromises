@@ -1,18 +1,8 @@
 #ifndef TOKENIZER_H_INCLUDED
 #define TOKENIZER_H_INCLUDED
 
-// Stupid windows DLL exporting of classes!
-#ifdef _WINDOWS
-#	ifdef _USRDLL
-#		define EXPORT __declspec(dllexport)
-#	else
-#		define EXPORT __declspec(dllimport)
-#	endif
-#else
-#	define EXPORT
-#endif
-
 #include "pch.h"
+#include "interop.h"
 #include <string>
 #include <xstring>
 #include <array>

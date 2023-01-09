@@ -150,9 +150,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Parser\Parser.vcxproj">
       <Project>{5f153985-60cf-44b0-b93f-3725583042b4}</Project>
     </ProjectReference>
