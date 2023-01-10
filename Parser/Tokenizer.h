@@ -1,4 +1,4 @@
-﻿#ifndef TOKENIZER_H_INCLUDED
+#ifndef TOKENIZER_H_INCLUDED
 #define TOKENIZER_H_INCLUDED
 
 #include "pch.h"
@@ -8,8 +8,8 @@
 #include <array>
 #include <map>
 #include <list>
+#include <format>
 #include <boost/filesystem.hpp>
-#include <boost/format.hpp>
 #include "ReadFileData.h"
 
 using namespace std;
@@ -164,8 +164,7 @@ public:
 
     inline std::string errorDisplay()
     {
-        auto fmt = boost::format("\"%|0.20|\"\nLine: %|d| Offset: %|d|") % tokenString % startingLine % startingCharacter;
-        return fmt.str();
+        return std::format("\"{:20}\"\nLine: {} Offset: {}", tokenString, startingLine, startingCharacter);
     }
 
     bool isKeyword();
