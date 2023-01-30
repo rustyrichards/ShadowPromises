@@ -45,445 +45,276 @@ Token::Token(
 {}
 
 
-long Token::checkHexNumberToken()
-{
-    if (2 < tokenString.length())
-    {
-        auto iter = tokenString.begin();
-        if ('0' == *(iter++)) {
-            if ('X' == *iter || 'x' == *iter)
-            {
-                typeAndFlags.type = Token::hexNumber;
-                while (++iter < tokenString.end()) 
-                {
-                    if (!isdigit(*iter) &&
-                        ('a' > *iter || *iter > 'f') &&
-                        ('A' > *iter || *iter > 'F'))
-                    {
-                        typeAndFlags.type = Token::badNumber;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    return typeAndFlags.type;
-}
-
-// NOTE: checkNumberToken returns typeAndFlags.type):
-// If typeAndFlags.type is something other than Token::unknownToken => return out and do not test
-// Otherwise
-//          Token::number => A valid number
-//          Token::badNumber => starts wiith a number prefix ('.', '-' or a digit) but is not valid
-//          Token::unknownToken => something not a number
-long Token::checkNumberToken()
-{
-    if (Token::unknownToken != typeAndFlags.type ||
-        Token::unknownToken != checkHexNumberToken())
-    {
-        return  typeAndFlags.type;
-    }
-
-    auto iter = tokenString.begin();
-
-    bool dotAllowed = true;
-    bool eAllowed = true;
-    char lastChr = 0;
-
-    while (iter != tokenString.end())
-    {
-        if (*iter == L'.')
-        {
-            // "." ia a bad number, so is "-.". Both will be corrected by a following digit
-            if (0 == lastChr || '-' == lastChr) typeAndFlags.type = Token::badNumber;
-
-            if (!dotAllowed)
-            {
-                // multiple '.' or '.' after 'e' not a number
-                typeAndFlags.type = Token::badNumber;
-                break;
-            }
-            dotAllowed = false;
-        }
-        else if (*iter == L'e' || *iter == L'e')
-        {
-            if (0 == lastChr) 
-            {
-                // starts with 'e' not a number
-                typeAndFlags.type = Token::unknownToken;
-                break;
-            }
-
-            // 'e' not followed by a digit is bad.
-            typeAndFlags.type = Token::badNumber;
-
-            if (!eAllowed || (!isdigit(lastChr) && lastChr != '.'))
-            {
-                // multiple 'e' is invalid, 'e' after anything other than a digit or '.' is invalid
-                break;
-            }
-
-            eAllowed = false;   // There can only be one 'e' exponential, 
-            dotAllowed = false; // No more '.' after the exponent
-        }
-        else if (*iter == '-')
-        {
-            // '-' not followed by a digit is bad.
-            typeAndFlags.type = Token::badNumber;
-
-            if (0 != lastChr && 'e' != lastChr && 'E' != lastChr)
-            {
-                // '-' is only allowed at the start or right after 'e'
-                break;
-            }
-        }
-        else if (isdigit(*iter))
-        {
-            // If we have encountered a digit, this is a valid potential number end - Valid numbers must always end with a digit.
-            typeAndFlags.type = Token::number;
-        }
-        else
-        {
-            typeAndFlags.type = (0 == lastChr)
-                ? Token::unknownToken // does not start with a number character - not a number token
-                : Token::badNumber; // starts with a number character - then something not a number - not valid.
-            break;
-        }
-        lastChr = *(iter++);
-    }
-
-    return typeAndFlags.type;
-}
-
-
 token_vector::token_vector() : vector<Token>()
 {}
 
-Tokenizer::Tokenizer(map<string_view, Token::TypeAndParsingFlags>* inKeywordTokens) :
-    allowDoubleQuoteStrings(true),
-    allowSingleQuoteStrings(true),
-    scopeChar(0),
-    keywordTokens(*inKeywordTokens),
-    tokens(*(new token_vector()))
-{}
-
-
-
-void Tokenizer::finishToken(
-    Token& token,
-    const char*& start,
-    const char* end,
-    int inType)
+long TokenMatching::countCharactersAndLineBreaks(const char*& runner, const char* end, long& characterNumber)
 {
-    token.typeAndFlags.type = inType;
-
-    token.tokenString = string_view(&*start, end - start);
-
-    if (Token::unknownToken == token.checkNumberToken())
+    long lineBreaks = 0;
+    while (runner < end)
     {
-        auto foundItem = keywordTokens.find(token.tokenString);
-        if (keywordTokens.end() != foundItem)
+        characterNumber++;
+        if ('\n' == *(runner++))
         {
-            token.typeAndFlags = foundItem->second;
-        }
-        else
-        {
-            // Identifiers supply their value
-            token.typeAndFlags.type = Token::identifier;
-            token.typeAndFlags.parsingFlags = Token::ParsingFlags::value;
+            lineBreaks++;
+            characterNumber = 1;
         }
     }
-    // else the token.typeAndFlags is set.
 
-    start = end;
+    return lineBreaks;
 }
 
-void Tokenizer::readInComment(
-    Token& token,
-    const char*& runner,
-    const char* end,
-    long& characterCount)
+void failTokenToNextWhitespace(Token& token, Token::TokenType faiureCode, long& characterNumber, long lineNumber, const char*& runner, const char* end)
 {
-    token.typeAndFlags.type = Token::comment;
+    // Match failure
+    token.startingLine = lineNumber;
+    token.startingCharacter = characterNumber;
+    token.typeAndFlags.type = faiureCode;
 
+    // Advance to the next whitespace. And declare the current "word" an error.
     const char* start = runner;
-
-    while (++runner < end && '\r' != *runner && '\n' != *runner);
-
-    characterCount += runner - start;
+    while (runner != end && !isspace(*runner))
+    {
+        runner++;
+        characterNumber++;
+    }
     token.tokenString = string_view(start, runner - start);
 }
 
-bool Tokenizer::readInString(
-    char stringStart,
-    const char*& runner,
-    const char* end,
-    long& lineCount,
-    long& characterCount,
-    bool multilineString)
+void TokenMatching::findNextToken(Token& token, long& characterNumber, long& lineNumber, const char*& runner, const char* end)
 {
-    bool isGoodString = false;
-    while (runner < end)
+    token.startingLine = lineNumber;
+    token.startingCharacter = characterNumber;
+
+    long matchedLen = 0;
+
+    if (isSingleCharacterMatch())
     {
-        bool notEscaped = L'\\' != *runner;
-        characterCount++;
-        runner++;
-        if (runner < end)
-        {
-            if ('\r' == *runner && !multilineString)
-            {
-                break;  // End of line before end of string - badString
-            }
-            else if ('\n' == *runner)
-            {
-                if (multilineString)
-                {
-                    // Line end in a multi line string
-                    lineCount++;
-                    characterCount = 1;
-                }
-                else
-                {
-                    break;  // End of line before end of string - badString
-                }
-            }
-            else if (notEscaped && stringStart == *runner)
-            {
-                isGoodString = true;
-                runner++;
-                break;
-            }
-        }
+        token.typeAndFlags.type = success;
+        token.tokenString = string_view(runner++, 1);
+        characterNumber++;
     }
-
-    return isGoodString;
-}
-
-// handleCurrentCharacterOverride must increment runner if it advances!
-bool Tokenizer::handleCurrentCharacterOverride(
-    Token& token,
-    const char*& start,
-    const char*& runner,
-    const char* end,
-    long& lineCount,
-    long& characterCount)
-{
-    return false;
-}
-
-
-void Tokenizer::handleCurrentCharacter(
-    Token& token,
-    const char*& start,
-    const char*& runner,
-    const char* end,
-    long& lineCount,
-    long& characterCount)
-{
-    char current = *runner;
-
-    // switch can preform better then the lots of if(s)
-    if (!handleCurrentCharacterOverride(token, start, runner, end, lineCount, characterCount))
+    else if ((NULL != tokenMatcher) &&
+        (0 < (matchedLen = (*tokenMatcher)(runner, end))))
     {
-        switch (current)
+        token.typeAndFlags.type = success;
+        token.tokenString = string_view(runner, matchedLen);
+        if (mayBeMultiline)
         {
-        case L'#':
-            if (start != runner)
-            {
-                // The token was started. save that then pickup the comment
-                finishToken(token, start, runner);
-            }
-            // Read in the  line comment
-            readInComment(token, runner, end, characterCount);
-            start = runner;
-            break;
-        case L'\n':
-        case L'\r':
-        case L' ':
-        case L'\t':
-        case L'\v':
-            characterCount++;
-            if (start == runner)
-            {
-                //  If the token is not started skip the whitespace
-                start++;
-                runner++;
-                token.startingCharacter = characterCount;
-
-                // If we have reached the line end go the the next.
-                if (L'\n' == current)
-                {
-                    // The line advanced before the token start
-                    token.startingLine = ++lineCount;
-                    token.startingCharacter = (characterCount = 1);
-                }
-            }
-            else
-            {
-                // The token is started.  The whitespace ends the token.
-                finishToken(token, start, runner);
-            }
-            break;
-        case L'+':  // +" of +' is multi line strings
-            if (start != runner)
-            {
-                finishToken(token, start, runner);
-            }
-
-            //  Read in the multi-line string
-            characterCount++;
-            runner++;
-            if (runner < end)
-            {
-                char stringStart = *runner;
-                if ((allowDoubleQuoteStrings || L'"' != stringStart) &&
-                    (allowSingleQuoteStrings || L'\'' != stringStart))
-                {
-                    bool isValidString = readInString(stringStart, runner, end, lineCount, characterCount, true /* Multiline */);
-                    finishToken(token, start, runner, (isValidString) ? Token::string : Token::badString);
-                }
-                else
-                {
-                    // + without the following string character is badPunctuation
-                    token.typeAndFlags.type = Token::badPunctuation;
-                    finishToken(token, start, runner);
-                }
-            }
-        break;
-        case L'\'':
-        case L'"':
-            // Trick - fall through to the punctuation if the quote is not supported.
-            if ((allowDoubleQuoteStrings || L'"' != current) &&
-                (allowSingleQuoteStrings || L'\'' != current))
-            {
-                characterCount++;
-                if (start != runner)
-                {
-                    // The token is started.  The quote ends the token.
-                    finishToken(token, start, runner);
-                }
-
-                // Read in the string token
-                bool isValidString = readInString(current, runner, end, lineCount, characterCount);
-                finishToken(token, start, runner, (isValidString) ? Token::string : Token::badString);
-                break;
-            }
-            // else unsupported quote will fall throught to punctuation
-
-        // Basically these punctuation characters are ispunct except for 
-        //  '_' which is valid in identifiers,
-        //  '-' is valid starting numbers and exponents, and can be other than the first characer in an identifier
-        //  '#' for comments, '"' and '\'' for strings,
-        //  ',' for numbers
-        case L'!':
-        case L'$':
-        case L'%':
-        case L'&':
-        case L'(':
-        case L')':
-        case L'*':
-        case L',':
-        case L'/':
-        case L':':
-        case L';':
-        case L'<':
-        case L'=':
-        case L'>':
-        case L'?':
-        case L'@':
-        case L'[':
-        case L']':
-        case L'^':
-        case L'`':
-        case L'{':
-        case L'|':
-        case L'}':
-        case L'~':
-            if (scopeChar == current)
-            {
-                token.hasScope = true;
-
-                // A token character but not a complete.
-                runner++;
-                characterCount++;
-            }
-            else
-            {
-                characterCount++;
-                if (start == runner)
-                {
-                    //  If the token is not started this punctuation will be the token
-                    runner++;
-                }
-                // else - The text before the punctuation is the token
-                finishToken(token, start, runner);
-            } 
-            break;
-        default:
-            // A token character, but not complete.
-            runner++;
-            characterCount++;
+            lineNumber += countCharactersAndLineBreaks(runner, runner + matchedLen, characterNumber);
         }
+        else
+        {
+            characterNumber += matchedLen;
+        }
+        runner += matchedLen;
+    }
+    else if (NULL != nextPossibleMatch)
+    {
+        nextPossibleMatch->findNextToken(token, characterNumber, lineNumber, runner, end);
+    }
+    else
+    {
+        failTokenToNextWhitespace(token, failure, characterNumber, lineNumber, runner, end);
     }
 }
 
-
-const char* Tokenizer::findNextToken(
-    Token& token,
-    const char* start,
-    const char* end,
-    long& lineCount,
-    long& characterCount)
+long TokenMatching::StringMatcher(const char* start, const char* end)
 {
-    token.startingLine = lineCount;
-    token.startingCharacter = characterCount;
-
     const char* runner = start;
+    char stringQuote = *runner;
 
-    while (token.typeAndFlags.type == Token::incomplete && runner != end)
+    if ('"' == stringQuote || '\'' == stringQuote)
     {
-        handleCurrentCharacter(token, start, runner, end, lineCount, characterCount);
+        bool isEscaped = false;
+        while (++runner < end)
+        {
+            if (!isEscaped && stringQuote == *runner)
+            {
+                // +1 include the final quote
+                return 1L + (runner - start);
+            }
+            if ('\\' == *runner)
+            {
+                // \ must toggle - \" = escaped, \\" = \ escaped " not, \\\" \ escaped " escaped  
+                isEscaped = !isEscaped;
+            }
+            else isEscaped = false;
+        }
+    }
+    return 0;
+};
+
+long TokenMatching::HexMatcher(const char* start, const char* end)
+{
+    const char* pos = start;
+
+    // Need atleast 0xh -> 3 characters
+    bool isHex = false;
+    if (3 <= end - start)
+    {
+        pos++;
+        if ('0' == *start && ('x' == *pos || 'X' == *pos))
+        {
+            pos++;
+            while (pos < end && (('0' <= *pos & *pos <= '9') ||
+                ('a' <= *pos & *pos <= 'f') ||
+                ('A' <= *pos & *pos <= 'F')))
+            {
+                pos++;
+                isHex = true;
+            }
+        }
     }
 
-    return runner;
-}
+    return (isHex && ((pos == end) || ispunct(*pos) || isspace(*pos)))
+        ? pos - start : 0;
+};
 
+long TokenMatching::DecimalMatcher(const char* start, const char* end)
+{
+    const char* pos = start;
 
+    bool negativeAllowed = true;
+    bool dotAllowed = true;
+    bool eAllowed = false;
+    bool containsE = false;
+    bool valid = false;
 
-void Tokenizer::internalTokenize(const char* start, const char* end)
+    while (pos < end)
+    {
+        if ('0' <= *pos & *pos <= '9')
+        {
+            valid = true;
+            negativeAllowed = false;
+
+            // Exponent allowed after a digit if it is not already in the number.
+            if (!containsE) eAllowed = true;
+        }
+        else if ('.' == *pos && dotAllowed)
+        {
+            dotAllowed = false;
+            negativeAllowed = false;
+        }
+        else if (('e' == *pos || 'E' == *pos) && eAllowed)
+        {
+            // Need a digit after 'e' to be valid again!
+            valid = eAllowed = dotAllowed = false;
+
+            // Can have a negative exponent
+            containsE = negativeAllowed = true;
+        }
+        else if ('-' == *pos && negativeAllowed)
+        {
+            negativeAllowed = false;
+        }
+        else break;
+
+        pos++;
+    }
+
+    return (valid && ((pos == end) || isspace(*pos)
+        || (ispunct(*pos) && '-' != *pos && '.' != *pos)))
+        ? pos - start : 0;
+};
+
+long TokenMatching::IdentifierMatcher(const char* start, const char* end)
+{
+    const char* pos = start;
+
+    // (isprint(*pos) || (0x80 & *pos)) - used to allow all multi-byte utf8
+    // This means some utf8 punctuation can be used in identifiers, but that is OK
+    if (pos < end && (isprint(*pos) || (0x80 & *pos)) && !ispunct(*pos) && !isspace(*pos) && !isdigit(*pos))
+    {
+        pos++;
+
+        // Digits allowed now.
+        while (pos < end && (isprint(*pos) || (0x80 & *pos)) && !ispunct(*pos) && !isspace(*pos))
+        {
+            pos++;
+        }
+
+        return pos - start;
+    }
+
+    return 0;
+};
+
+long TokenMatching::RestOfLineMatcher(const char* start, const char* end)
+{
+    const char* pos = start;
+
+    while (pos < end && '\n' != *pos) pos++;
+
+    return pos - start;
+};
+
+void Tokenizer::internalTokenize(const char*& runner, const char* end)
 {
     long lineNumber = 1;
     long characterNumber = 1;
 
-    bool wasLastIncomplete = false;
-
     // Skip UTF8 BOM if it exists
-    if ((start + 3 <= end) && (0xEF == (unsigned char)*start) && (0xBB == (unsigned char)*(start + 1)) && (0xBF == (unsigned char)*(start + 2)))
+    if ((runner + 3 <= end) && (0xEF == (unsigned char)*runner) && (0xBB == (unsigned char)*(runner + 1)) && (0xBF == (unsigned char)*(runner + 2)))
     {
-        start += 3;
+        runner += 3;
     }
 
-    while (start < end)
+    while (runner < end)
     {
         tokens.emplace_back(lineNumber, characterNumber);
 
-        start = findNextToken(tokens.back(), start, end, lineNumber, characterNumber);
+        // Skip over the whitespace.
+        while (runner < end && isspace(*runner))
+        {
+            characterNumber++;
+            if ('\n' == *runner++)
+            {
+                lineNumber++;
+                characterNumber = 1;
+            }
+        }
 
-        wasLastIncomplete = Token::incomplete == tokens.back().typeAndFlags.type;
+        char toLookup = *runner;
+        // The digit 0 can be any of the nuumber encodings.
+        // '1' to '9' can only be decimal encoding.  Use '1' as the lookup so we don't need to repeat the matchers.
+        if ('2' <= toLookup && toLookup <= '9') toLookup = '1';
 
+        auto match = tokenReadingMap.find(toLookup);
+        if (match == tokenReadingMap.end() && !ispunct(toLookup))
+        {
+            // Try the default match of char 0 for identifiers.
+            // Note: identifiers can not start with punctuation
+            match = tokenReadingMap.find(0);
+        }
+
+        if (match != tokenReadingMap.end())
+        {
+            match->second->findNextToken(tokens.back(), characterNumber, lineNumber, runner, end);
+        }
+        else if (ispunct(toLookup))
+        {
+            // Bad / unsupported punctuation
+            Token& token = tokens.back();
+            token.typeAndFlags.type = Token::badPunctuation;
+            token.tokenString = string_view(runner++, 1);
+            characterNumber++;
+        }
+        else
+        {
+            // Not matched - make it a bad token from the current location to the next whitespace
+            // This should not happen unless the char = 0 map entry was not set.
+            failTokenToNextWhitespace(tokens.back(), Token::badUnknown, characterNumber, lineNumber, runner, end);
+        }
     }
 
-    // If the current token is incomplete and empty - make it the endOfInput
-    // NOTE: wasLastIncomplete won't be true unless tokens.back() exists!
-    if (wasLastIncomplete && Token::incomplete == tokens.back().typeAndFlags.type && tokens.back().tokenString.length() == 0)
-    {
-        tokens.back().init(lineNumber, characterNumber, Token::endOfInput);
-    }
-    else
-    {
-        tokens.emplace_back(lineNumber, characterNumber, Token::endOfInput);
-    }
+    tokens.emplace_back(lineNumber, characterNumber, Token::endOfInput);
 }
+
+Tokenizer::Tokenizer(map<char, TokenMatching*>* inTokenReadingMap) :
+    tokenReadingMap(*inTokenReadingMap),
+    tokens(*(new token_vector()))
+{}
 
 void Tokenizer::tokenize(istream& input)
 {
@@ -491,7 +322,7 @@ void Tokenizer::tokenize(istream& input)
     sourceFileData.push_back(readData);
 
     const char* start = readData->readInFile(input);
-    Tokenizer::internalTokenize(start, readData->end());
+    internalTokenize(start, readData->end());
 }
 
 void Tokenizer::tokenize(boost::filesystem::path& filePath)
@@ -500,7 +331,7 @@ void Tokenizer::tokenize(boost::filesystem::path& filePath)
     sourceFileData.push_back(readData);
 
     const char* start = readData->readInFile(filePath);
-    Tokenizer::internalTokenize(start, readData->end());
+    internalTokenize(start, readData->end());
 }
 
 void Tokenizer::tokenize(string_view stringBuffer)
@@ -509,7 +340,7 @@ void Tokenizer::tokenize(string_view stringBuffer)
     sourceFileData.push_back(readData);
 
     const char* start = readData->useExistingBuffer(stringBuffer.data(), stringBuffer.size());
-    Tokenizer::internalTokenize(start, readData->end());
+    internalTokenize(start, readData->end());
 }
 
 

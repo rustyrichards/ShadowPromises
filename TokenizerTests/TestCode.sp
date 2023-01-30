@@ -1,4 +1,4 @@
-﻿+'Line 1 of multi-line string
+'Line 1 of multi-line string
 Line 2 of multi-line string' # The string is complete
 
 5.5e2 | a
@@ -7,16 +7,21 @@ Line 2 of multi-line string' # The string is complete
 0xABCD | c
 'test ▲\u{25B2} 𝅘𝅥\u{1D15F} \x{0d}\x{0a}' | d
 
-:test(:equals(8.8, y))
+:test(
+    :equals(
+        8.8
+        y
+    )
+)
 :if {
 	7.7 | y
 } :else {
 	8.8 | y
 }
 
-<
-  double[] in
->
+[
+  double in
+]
 {
 	:return 
 		:listReduce
@@ -28,5 +33,12 @@ Line 2 of multi-line string' # The string is complete
 } | sum
 
 -1e-2 | x		# -0.01
-01.01.23 | x	# not a valid number
---123 | x		# not a valid number
+
+#error tests
+01.01.23 # not a valid number
+--123  # not a valid number
+123x # Bad decimal number
+0xqq # Bad hex number
+0x   # Bad hex number - no digits
+~ `  # Bad punctuation
+"abc def

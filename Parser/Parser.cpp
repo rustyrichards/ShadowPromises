@@ -187,10 +187,10 @@ bool ParseNode::setEscapeValue(char*& dest, const char*& runner, const char* end
 	bool isUtf = false;
 	switch (*runner)
 	{
-	case '\'' :
-	case '"' :
-	case '?' :
-	case '\\' :
+	    case '\'' :
+	    case '"' :
+	    case '?' :
+	    case '\\' :
 		*(dest++) = *runner;
 		break;
 	case 'a' :
@@ -308,8 +308,8 @@ void ParseNode::setType(Token::TokenType inType)
 	// Do not change token.typeAndFlags.type if it is already marked as a failure
 	if (Token::failures > token.typeAndFlags.type)
 	{
-		// Do not change to Token::unknownToken or anything less
-		if (Token::unknownToken < inType) token.typeAndFlags.type = inType;
+		// Do not change to unknownToken or anything less
+		if (Token::unknownToken < (long)inType) token.typeAndFlags.type = (long)inType;
 
 		switch (token.typeAndFlags.type)
 		{
@@ -319,7 +319,7 @@ void ParseNode::setType(Token::TokenType inType)
 		case Token::hexNumber:
 			decodeHexToDouble(token.tokenString);
 			break;
-		case Token::string:
+		case Token::stringValue:
 			decodeString(token.tokenString);
 			break;
 		// NOTE:  the function data is not read in.  It will be assidned later.
@@ -365,7 +365,7 @@ long Parser::parseFunctionCall(
 		// A logical operation (and, or, nand), or other function like keyword, or an function call
 		if (current->hasParsingFlags(Token::parametersFollows) || Token::identifier == current->getType())
 		{
-			// TODO:  if Token::identifier == type need to validate that it is a function
+			// TODO:  if identifier == type need to validate that it is a function
 			pos++;		// Jump over the "(" we are making the parameter list; we no-longer need the token
 			current->parameters = internalParse(depth + 1,
 				// NOTE: prototype and parameters do not count as being in a block!
@@ -397,7 +397,7 @@ long Parser::parseBlock(
 		current = newNode;
 	}
 
-	// isLoopExitAllowed | 0 != flags & Token::loopBlock - need to be able to exit from within an if or nested block in a loopBlock
+	// isLoopExitAllowed | 0 != flags & loopBlock - need to be able to exit from within an if or nested block in a loopBlock
 	pos++;		// Jump over the "{" we are making the block we no-longer need the token
 
 	long blockState = setParsingFlag(state, inBlock);
@@ -463,7 +463,7 @@ ParseNode* Parser::internalParseParameterList(
 			}
 		}
 
-		// Do not need to check other current->hasParsingFlags current->hasParsingFlags(Token::allowedInParameters) will have covered that.
+		// Do not need to check other current->hasParsingFlags current->hasParsingFlags(allowedInParameters) will have covered that.
 
 		// :test , :if , :else are not allowed here so no need to setTestResultAndElseAllowedFromTokenFlags
 	}

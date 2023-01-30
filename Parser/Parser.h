@@ -8,7 +8,6 @@ using namespace std;
 
 class EXPORT funct
 {
-
 };
 
 class EXPORT ParseNode
@@ -31,6 +30,8 @@ public:
 		value = 1024,	// less than value means it is a value type
 
 		statement,
+        ifElse,
+        loop
 	};
 
 	union nodeValue {
@@ -56,7 +57,7 @@ public:
 
 	bool isFunction;		// true for a function definition
 
-	string parsingError;	// Nun-empty if there was an error
+	std::string parsingError;	// Nun-empty if there was an error
 
 	inline long getType() { return (unsigned long)token.typeAndFlags.type; }
 	inline long getParsingFlags() { return (unsigned long)token.typeAndFlags.parsingFlags; }
@@ -177,7 +178,7 @@ public:
 			(tokenFlags & (testResultAvailable | elseIsAllowed));
 	}
 
-	Parser(map<string_view, Token::TypeAndParsingFlags>* inKeywordTokens) : tokenizer(*new Tokenizer(inKeywordTokens)) {}
+	Parser(map<char, TokenMatching*>* matchPatterns) : tokenizer(*new Tokenizer(matchPatterns)) {}
 	Parser(Tokenizer& inTokenizer) : tokenizer(inTokenizer) {}
 
 	inline void tokenize(istream& input) { tokenizer.tokenize(input); }

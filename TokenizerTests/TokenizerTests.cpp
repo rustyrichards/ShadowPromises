@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -397,7 +397,7 @@ namespace TokenizerTests
 
 			tokenIter++;
 			Assert::AreEqual("'simple string'"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::string, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeAndFlags.type);
 
 			tokenIter++;
 			Assert::AreEqual("\"Unterminated string."sv, tokenIter->tokenString);
@@ -461,7 +461,7 @@ namespace TokenizerTests
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("+'Line 1 of multi-line string\nLine 2 of multi-line string'"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::string, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeAndFlags.type);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
@@ -523,7 +523,7 @@ namespace TokenizerTests
 			Assert::IsFalse(shadowPromisesTokenizer.tokens.empty(), L"There should be some tokens from the memory mapped file.");
 
 			Assert::AreEqual("+'Line 1 of multi-line string\nLine 2 of multi-line string'"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::string, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeAndFlags.type);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 		}

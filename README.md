@@ -212,11 +212,9 @@ sum(
 ## Namespaces
 Namespace prefixes are always used.
 
-The language core namespaces are 1 character
-1. **:** core language keywords - NOTE: keywords are not functions.<br>Keywords have the empty namespace.
-2. **s:** core library
-3. **g:** singleton variables
-4. **opt:** compiler/build options
+The language core namespaces
+1. **:** core language  namespace.
+2. **s:** core string library
 
 Import modules have a UUID and the namespace they will use.  The suggested namespace will be in the library's comment block.
 
@@ -311,7 +309,7 @@ When building for test a sorted list of all the `:test` blocks are made.  They a
 ## :option
 Conditional compilation is controled by
 ```
-:option [namespacedDefined] {
+:option [id] {
     ...
 }
 ```
@@ -329,3 +327,55 @@ For example:
 
 ## :undefine
 `:undefine [flagName]` sets [flagName] off for contitional compilation with the :option statement.  In most cases the conditional compilation flags should come from the build environment, but sometimes they need to be manually turned on or off.
+
+# Syntax
+## Tokens
+| Prefix Match | Regex | ID | Description |
+|:--- |:--- |:--- |:--- |
+| " | <pre>^"[\s\S]*?(?<!\\)"</pre> | string | A string (may be multiline) |
+| ' | <pre>^'[\s\S]*?(?<!\\)'</pre> | string | A string (may be multiline) |
+| 0[xX] | <pre>^0\[xX](?:[0-9a-fA-F]{2})+(?=[\W])</pre> | number | A hex number digits must be pairs,<br>0 is 0x00 |
+| [-\d] | <pre>^-?[\d]+(?:\.[\d]*)?(?:[eE]-?[\d]+)?(?=[^\w.])</pre> | number | A decimal number<br>NOTE: cannot start with . |
+| # | <pre>^#[^\r\n]*</pre> | comment | Line comment to EOL |
+| : | | : | Namespace separator |
+| . | | . | Member separator |
+| { | | | Block start |
+| } | | | Block end |
+| ( | | | Parameters start |
+| ) | | | Parameters end |
+| [ | | | Prototype stat |
+| ] | | | Prototype end |
+| \| | | \| |assignment (pipe) |
+| [!$%&*,/;<=>?@^`~] | | ! | Unassigned punctuation | 
+| [^\s\x00-\@\[-\`\{-\x7f] | <pre>[^\s\x00-\@\[-\`\{-\x7f][^\s\x00-\\/\:-\\@\\[-\`\{-\x7f]*</pre> | id | An itentifier or keyword |
+| \s | \s* | \s | White space (No tokens are made for whitespace) |
+
+## Typed Identifiers
+| Identifier Type | Description |
+|:--- |:--- |
+| package | An imported package or namespace<br>no package is the core language |
+| functionId | the identifier of a function |
+
+## Statements
+```
+function = functionPrototype  | functionId
+string = stringConstant | stringId
+additionalParameters = ("\n" typedVariableId [additionalParameters] )
+parameters = "(" [typedVariableId [additionalParameters]] ")""
+callType = "" | ":inline" | ":async" | (":thread" threadId) | (":remote" string)
+
+test = ":test" "(" logicalResult ")"
+loopExit = test ":break"
+
+blockStatements = (*functionCall | *if | *loop) [blockStatements]
+# note: loopBlockStatements must contain 1 or more loopExit!
+loopBlockStatements = [blockStatements] loopExit [blockStatements] [loopBlockStatements]
+
+*functionCall = package ":" function [callType] parameters
+*if = test ":if" block [":else" block]
+*block = "{" [blockStatements] "}"
+*loop = ":loop" "{" loopBlockStatements "}"
+*opt = ":opt" definedOrUndefinedId *block
+
+
+```
