@@ -34,7 +34,7 @@ public:
         loop
 	};
 
-	union nodeValue {
+	union EXPORT nodeValue {
 		nodeValue(double inVal) : doubleVal(inVal) {};
 		nodeValue(long inVal) : longVal(inVal) {};
 		nodeValue(string_view inVal) : stringVal(inVal) {};
@@ -48,7 +48,7 @@ public:
 	long		nodeType;
 	nodeValue	val;
 	char*		replacementStringBuffer;
-	Token&		token;		// Note: token.typeAndFlags.type will be adjusted to the type that fits the token and parsing state.
+	Token&		token;		// Note: token.typeFlags will be adjusted to the type that fits the token and parsing state.
 	ParseNode*	next;
 
 	ParseNode* identifier;	// For nodes that need an identifier
@@ -59,23 +59,23 @@ public:
 
 	std::string parsingError;	// Nun-empty if there was an error
 
-	inline long getType() { return (unsigned long)token.typeAndFlags.type; }
-	inline long getParsingFlags() { return (unsigned long)token.typeAndFlags.parsingFlags; }
+	inline long getType() { return (unsigned long)token.typeFlags; }
+	inline long getParsingFlags() { return 0; }
 	void setType(Token::TokenType inType);
 
 	inline bool hasParsingFlags(long flags)
 	{
-		return token.hasParsingFlags(flags);
+		return false;
 	}
 
 	inline bool hasRequirementsFlags()
 	{
-		return  token.hasRequirementsFlags();
+		return  false;
 	}
 
 	inline bool hasFollowsFlags()
 	{
-		return  token.hasFollowsFlags();
+		return  false;
 	}
 
 	inline bool hasNoError()

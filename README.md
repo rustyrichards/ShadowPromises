@@ -29,11 +29,14 @@ Using | again will shadow/replace the old variable.  Everything already called h
 
 Functions take an ordered list of parametes.
 
-    :And 
+    :and 
 Operates on ordered lists and shoutcuts out on a false value
 
-    :Or 
+    :ar 
 Operates on ordered lists and shoutcuts out on a true value
+
+    :nand 
+nand is :and with the result negated
 
 The ordered list starts with 
 
@@ -71,27 +74,23 @@ Event based asyncronous on the same thread
 
 Run on a given thread or threadpool 
 
-    [ThreadStruct]:startAsync /FunctionName\(/ParameterList\) [| /PromiseResult\]
+    :startAsync [ThreadStruct] /FunctionName\(/ParameterList\) [| /PromiseResult\]
 
 
 ## Promise
 All functions return a result with the following:
 
 Failed
-*  bool =\ True if the function failed
+*  bool -> True if the function failed
 
 Retryable
-* bool =\ True if the the error can be resonably corrected.  To make it easier on the user do not set retryable on success.  (e.g. missing removable disk, out of diskspace.  Not other file write errors.)
+* bool -> True if the the error can be resonably corrected.  To make it easier on the user do not set retryable on success.  (e.g. missing removable disk, out of diskspace.  Not other file write errors.)
 
 ErrorCode
-* String =\ [module UUID] [error Id]
+* String -> [module UUID] [error Id]
 
-Turn an error code into a localized error message
-
-    :call
-        s:ErrorCode
-    :receive | errorString
-* A function that returns a String =\ The message if the current g:locale or g:language can be looked up followed by \n[resource name]  e.g. a file open to "temp/foo.txt" fails g:local is "DE:de", g:language is "de fr es" but the there are only english resources in the module so error message would be<br>"\ntemp/foo.txt"<br>This `ErrorMessage()` should cache string for repeated calls.
+ErrorMessage()
+* A function that returns a String -> The message if the current g:locale or g:language can be looked up followed by \n[resource name]  e.g. a file open to "temp/foo.txt" fails g:local is "DE:de", g:language is "de fr es" but the there are only english resources in the module so error message would be<br>"temp/foo.txt"<br>This `ErrorMessage()` should cache string for repeated calls.
 
 Result
 * Attempting to use result does a wait.
@@ -99,20 +98,20 @@ Result
 
 ## Defining Functions
 ```
-<
-    /protptype varaibles\
->
+[
+    [[protptype varaibles]]
+]
 {
-    /function body\
+    [[function body]]
 }
 ```
 
 ## Function examples
-Make the function /double\
+Make the function save it to the variable "double"
 ```
-<
+[
     float in
->
+]
 {
     :return
         multiply(
@@ -129,14 +128,16 @@ Make and call a sum function using tail recursion
 >
 {
     :if (:isEmpty(in))
-    :then {
+    :then 
+    {
         :return 0.0
     }
     :if (:has1(in))
-    :then {
+    :then 
+    {
          :return in.first
     }
-    :else
+    :else 
     {
         :return
             :add(
@@ -160,23 +161,29 @@ sum(
 :function OpenFileWithRetryPrompt(
     s:String filePath
 ){
-    :loop {
+    :loop
+    {
         :scratch s:flag shouldRetry false
         
         s:openFile(
             filePath
         ) | openFileHandle
 
-        :test (openFileHandle.Failed)
-        :if  {
+        :if (openFileHandle.Failed)
+        :then
+        {
            ui:ShowErrorMessage :uiThread (
                 openFileHandle.Error
             ) | shouldRetry
-        } :else {
+
+        }
+        :else
+        {
             :return openFileHandle
         }
 
-        :test (:not(shouldRetry)) :loopExit 
+        :if (:not(shouldRetry)) 
+        :loopExit 
     }
 }
 ```
@@ -189,18 +196,25 @@ sum(
 ) {
     s:openFile :async (
         filePath
-    ) :continueWith (openFileHandle) {
-        :test (openFileHandle.Failed)
-        :if  {
+    ) 
+    :continueWith (openFileHandle)
+    {
+        :if (openFileHandle.Failed)
+        :then
+        {
             ui:ShowErrorMessage :uiThread (
                 openFileHandle.Error
-            ) :continueIf {
+            ) 
+            :continueIf 
+            {
                 OpenFileWithRetryPrompt (
                     filePath
                     handleFile
                 )
             }
-        } :else {
+        }
+        :else
+        {
             handleFile(openFileHandle)
         }
     }
@@ -330,25 +344,6 @@ For example:
 
 # Syntax
 ## Tokens
-| Prefix Match | Regex | ID | Description |
-|:--- |:--- |:--- |:--- |
-| " | <pre>^"[\s\S]*?(?<!\\)"</pre> | string | A string (may be multiline) |
-| ' | <pre>^'[\s\S]*?(?<!\\)'</pre> | string | A string (may be multiline) |
-| 0[xX] | <pre>^0\[xX](?:[0-9a-fA-F]{2})+(?=[\W])</pre> | number | A hex number digits must be pairs,<br>0 is 0x00 |
-| [-\d] | <pre>^-?[\d]+(?:\.[\d]*)?(?:[eE]-?[\d]+)?(?=[^\w.])</pre> | number | A decimal number<br>NOTE: cannot start with . |
-| # | <pre>^#[^\r\n]*</pre> | comment | Line comment to EOL |
-| : | | : | Namespace separator |
-| . | | . | Member separator |
-| { | | | Block start |
-| } | | | Block end |
-| ( | | | Parameters start |
-| ) | | | Parameters end |
-| [ | | | Prototype stat |
-| ] | | | Prototype end |
-| \| | | \| |assignment (pipe) |
-| [!$%&*,/;<=>?@^`~] | | ! | Unassigned punctuation | 
-| [^\s\x00-\@\[-\`\{-\x7f] | <pre>[^\s\x00-\@\[-\`\{-\x7f][^\s\x00-\\/\:-\\@\\[-\`\{-\x7f]*</pre> | id | An itentifier or keyword |
-| \s | \s* | \s | White space (No tokens are made for whitespace) |
 
 ## Typed Identifiers
 | Identifier Type | Description |

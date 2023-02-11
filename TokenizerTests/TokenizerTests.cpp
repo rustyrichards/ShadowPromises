@@ -39,31 +39,31 @@ namespace TokenizerTests
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("5.0"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("|"sv, tokenIter->tokenString);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
-			Assert::AreEqual((long)Token::Token::assignment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::assignment, tokenIter->typeFlags);
 			Assert::AreEqual((long)5, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("var1"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::Token::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::identifier, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)6, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# Assigning to var1"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::Token::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)12, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual(""sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::Token::endOfInput, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::endOfInput, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)31, tokenIter->startingCharacter);
 		}
@@ -96,138 +96,138 @@ namespace TokenizerTests
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("1"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("0"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)2, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("7.012"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)3, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("-5"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)4, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("-.5"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)5, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual(".5"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)6, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("0xabcdef1234567890ABCDEF"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::hexNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::hexNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)7, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("0X123"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::hexNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::hexNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)8, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("-1.2e-2"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)9, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("#  -0.012 is valid"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)9, tokenIter->startingLine);
 
 			tokenIter++;
 			Assert::AreEqual("01.01.23"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)10, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# not a valid number"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)10, tokenIter->startingLine);
 
 			tokenIter++;
 			Assert::AreEqual("--123"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)11, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# not a valid number"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)11, tokenIter->startingLine);
 
 			tokenIter++;
 			Assert::AreEqual("-"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)12, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# not a valid number"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)12, tokenIter->startingLine);
 
 			tokenIter++;
 			Assert::AreEqual("."sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)13, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# not a valid number"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)13, tokenIter->startingLine);
 
 			tokenIter++;
 			Assert::AreEqual("0x"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)14, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# no hex digits"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)14, tokenIter->startingLine);
 
 			tokenIter++;
 			Assert::AreEqual("0xg"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)15, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# g is not allowed"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)15, tokenIter->startingLine);
 
 			tokenIter++;
 			Assert::AreEqual("0x1.1"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badNumber, tokenIter->typeFlags);
 			Assert::AreEqual((long)16, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# '.' is not allowed in a hex number"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)16, tokenIter->startingLine);
 		}
 
@@ -244,31 +244,31 @@ namespace TokenizerTests
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("5.0"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("|"sv, tokenIter->tokenString);
 			Assert::AreEqual((long)2, tokenIter->startingLine);
-			Assert::AreEqual((long)Token::Token::assignment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::assignment, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("var1"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::Token::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::identifier, tokenIter->typeFlags);
 			Assert::AreEqual((long)3, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual("# Assigning to var1"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::Token::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::comment, tokenIter->typeFlags);
 			Assert::AreEqual((long)4, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual(""sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::Token::endOfInput, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::endOfInput, tokenIter->typeFlags);
 			Assert::AreEqual((long)4, tokenIter->startingLine);
 			Assert::AreEqual((long)20, tokenIter->startingCharacter);
 		}
@@ -301,150 +301,150 @@ namespace TokenizerTests
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual(":define"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("DEBUG"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(":option"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("DEBUG"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("{"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::block_start, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::block_start, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("2.0"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("|"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::assignment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::assignment, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("z"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("}"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::block_end, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::block_end, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(":test"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("("sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::params_start, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::params_start, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(":equals"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("("sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::params_start, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::params_start, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("x"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("y"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(")"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::params_end, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::params_end, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(")"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::params_end, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::params_end, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("# :test and :if on separate lines"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::comment, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(":if"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("{"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::block_start, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::block_start, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("1.0"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::number, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("|"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::assignment, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::assignment, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("z"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("}"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::block_end, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::block_end, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("'simple string'"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("\"Unterminated string."sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badString, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badString, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(":loop"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("{"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::block_start, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::block_start, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(":test"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("("sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::params_start, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::params_start, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("true"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(")"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::params_end, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::params_end, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(":exit"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("}"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::block_end, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::block_end, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual(":undefine"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::TokenType::keyword, tokenIter->typeFlags);
 
 			tokenIter++;
 			Assert::AreEqual("DEBUG"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::Token::TokenType::identifier, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::Token::TokenType::identifier, tokenIter->typeFlags);
 
 			tokenIter++;
-			Assert::AreEqual((long)Token::TokenType::endOfInput, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::endOfInput, tokenIter->typeFlags);
 		}
 
 		TEST_METHOD(TokenizeMultiLineString)
@@ -461,18 +461,18 @@ namespace TokenizerTests
 
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("+'Line 1 of multi-line string\nLine 2 of multi-line string'"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 
 			tokenIter++;
 			Assert::AreEqual(":test"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::keyword, tokenIter->typeFlags);
 			Assert::AreEqual((long)2, tokenIter->startingLine);
 			Assert::AreEqual((long)30, tokenIter->startingCharacter);
 
 			tokenIter++;
-			Assert::AreEqual((long)Token::TokenType::endOfInput, tokenIter->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::endOfInput, tokenIter->typeFlags);
 
 			// Make sure the token.tokenString really just points into the source buffer.
 			// Changing all the source charecers to ' ' should blank out the  tokens!
@@ -501,12 +501,12 @@ namespace TokenizerTests
 
 			auto tokenIter2 = shadowPromisesTokenizer.tokens.begin();
 			Assert::AreEqual("+'Line 1 of multi-line string\nLine 2 of multi-line string :test\n"sv, tokenIter2->tokenString);
-			Assert::AreEqual((long)Token::TokenType::badString, tokenIter2->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::badString, tokenIter2->typeFlags);
 			Assert::AreEqual((long)1, tokenIter2->startingLine);
 			Assert::AreEqual((long)1, tokenIter2->startingCharacter);
 
 			tokenIter2++;
-			Assert::AreEqual((long)Token::TokenType::endOfInput, tokenIter2->typeAndFlags.type);
+			Assert::AreEqual((long)Token::TokenType::endOfInput, tokenIter2->typeFlags);
 		}
 
 		TEST_METHOD(TokenizeMemoryMappedFile)
@@ -522,8 +522,8 @@ namespace TokenizerTests
 			auto tokenIter = shadowPromisesTokenizer.tokens.begin();
 			Assert::IsFalse(shadowPromisesTokenizer.tokens.empty(), L"There should be some tokens from the memory mapped file.");
 
-			Assert::AreEqual("+'Line 1 of multi-line string\nLine 2 of multi-line string'"sv, tokenIter->tokenString);
-			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeAndFlags.type);
+			Assert::AreEqual("'Line 1 of multi-line string\nLine 2 of multi-line string'"sv, tokenIter->tokenString);
+			Assert::AreEqual((long)Token::TokenType::stringValue, tokenIter->typeFlags);
 			Assert::AreEqual((long)1, tokenIter->startingLine);
 			Assert::AreEqual((long)1, tokenIter->startingCharacter);
 		}

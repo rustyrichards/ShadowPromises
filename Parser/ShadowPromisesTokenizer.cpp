@@ -178,7 +178,6 @@ extern "C++" EXPORT Tokenizer& initShadowPromisesTokenizer()
                     Token::badUnknown
                 )
             ),
-            make_pair(':', new TokenMatching(Token::scope)),
             make_pair('.', new TokenMatching(Token::member)),
             make_pair('{', new TokenMatching(Token::block_start)),
             make_pair('}', new TokenMatching(Token::block_end)),
@@ -187,7 +186,7 @@ extern "C++" EXPORT Tokenizer& initShadowPromisesTokenizer()
             make_pair('[', new TokenMatching(Token::prototype_start)),
             make_pair(']', new TokenMatching(Token::prototype_end)),
             make_pair('|', new TokenMatching(Token::assignment)),
-            make_pair(0,
+            make_pair('a',
                 new TokenMatching(
                     TokenMatching::IdentifierMatcher,
                     Token::comment,
@@ -209,8 +208,7 @@ extern "C" EXPORT void dumpTokens(
     {
         output << "TokenIndex:  " << count++ << "  String: " << runner->tokenString << endl <<
             "Line: " << runner->startingLine << "  Characer: " << runner->startingCharacter << endl <<
-            "Type: " << runner->typeAndFlags.type << endl <<
-            "ParseFlags: " << runner->typeAndFlags.parsingFlags << endl << endl;
+            "Type: " << runner->typeFlags << endl << endl;
         runner++;
     }
 }

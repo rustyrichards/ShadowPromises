@@ -103,68 +103,21 @@ public:
     };
 
 
-    struct EXPORT TypeAndParsingFlags {
-        long type;
-        long parsingFlags;
-
-        inline TypeAndParsingFlags(
-            long inType = Token::unknownToken,
-            long inFlags = Token::none)
-        {
-            type = inType;
-            parsingFlags = inFlags;
-        }
-
-        inline bool hasParsingFlags(long flagsToCheck)
-        {
-            return flagsToCheck == (parsingFlags & flagsToCheck);
-        }
-
-        inline bool hasRequirementsFlags()
-        {
-            return  Token::_requirementsFlags <= (parsingFlags & Token::_requirementsFlagsMax);
-        }
-
-        inline bool hasFollowsFlags()
-        {
-            return  Token::_followsFlags <= (parsingFlags & Token::_followsFlagsMax);
-        }
-    };
-
     bool            hasScope;
     long            startingLine;
     long            startingCharacter;
     string_view     tokenString;
-    TypeAndParsingFlags typeAndFlags;
+    long            typeFlags;
 
     void init(
         long inStartingLine,
         long inStartingCharacter,
-        int inType = Token::incomplete,
-        int inParsingFlags = Token::none);
+        int inType = Token::incomplete);
 
     Token(
         long inStartingLine = 0,
         long inStartingCharacter = 0,
-        int inType = Token::incomplete,
-        int inParsingFlags = Token::none);
-
-    long checkHexNumberToken();
-    long checkNumberToken();
-
-    inline bool hasParsingFlags(long flagsToCheck)
-    {
-        return typeAndFlags.hasParsingFlags(flagsToCheck);
-    }
-    inline bool hasRequirementsFlags()
-    {
-        return  typeAndFlags.hasRequirementsFlags();
-    }
-
-    inline bool hasFollowsFlags()
-    {
-        return  typeAndFlags.hasFollowsFlags();
-    }
+        int inType = Token::incomplete);
 
     inline std::string errorDisplay()
     {

@@ -5,43 +5,40 @@
 
 bool Token::isKeyword()
 {
-    return keyword <= typeAndFlags.type && typeAndFlags.type < keyword + sectionSize;
+    return keyword <= typeFlags && typeFlags < keyword + sectionSize;
 }
 
 bool Token::isIdentifier()
 {
-    return identifier <= typeAndFlags.type && typeAndFlags.type < identifier + sectionSize;
+    return identifier <= typeFlags && typeFlags < identifier + sectionSize;
 }
 
 bool Token::isBlock()
 {
-    return block <= typeAndFlags.type && typeAndFlags.type < block + sectionSize;
+    return block <= typeFlags && typeFlags < block + sectionSize;
 }
 
 void Token::init(
     long inStartingLine, 
     long inStartingCharacter, 
-    int inType,
-    int inParsingFlags)
+    int inType)
 {
     hasScope = false;
     startingLine = inStartingLine;
     startingCharacter = inStartingCharacter;
     tokenString = ""sv;
-    typeAndFlags.type = inType;
-    typeAndFlags.parsingFlags = inParsingFlags;
+    typeFlags = inType;
 }
 
 Token::Token(
     long inStartingLine,
     long inStartingCharacter,
-    int inType,
-    int inParsingFlags) :
+    int inType) :
     hasScope(false),
     startingLine(inStartingLine),
     startingCharacter(inStartingCharacter),
     tokenString(""sv),
-    typeAndFlags(inType, inParsingFlags)
+    typeFlags(inType)
 {}
 
 
@@ -69,7 +66,7 @@ void failTokenToNextWhitespace(Token& token, Token::TokenType faiureCode, long& 
     // Match failure
     token.startingLine = lineNumber;
     token.startingCharacter = characterNumber;
-    token.typeAndFlags.type = faiureCode;
+    token.typeFlags = faiureCode;
 
     // Advance to the next whitespace. And declare the current "word" an error.
     const char* start = runner;
@@ -90,14 +87,14 @@ void TokenMatching::findNextToken(Token& token, long& characterNumber, long& lin
 
     if (isSingleCharacterMatch())
     {
-        token.typeAndFlags.type = success;
+        token.typeFlags = success;
         token.tokenString = string_view(runner++, 1);
         characterNumber++;
     }
     else if ((NULL != tokenMatcher) &&
         (0 < (matchedLen = (*tokenMatcher)(runner, end))))
     {
-        token.typeAndFlags.type = success;
+        token.typeFlags = success;
         token.tokenString = string_view(runner, matchedLen);
         if (mayBeMultiline)
         {
@@ -157,9 +154,9 @@ long TokenMatching::HexMatcher(const char* start, const char* end)
         if ('0' == *start && ('x' == *pos || 'X' == *pos))
         {
             pos++;
-            while (pos < end && (('0' <= *pos & *pos <= '9') ||
-                ('a' <= *pos & *pos <= 'f') ||
-                ('A' <= *pos & *pos <= 'F')))
+            while (pos < end && (('0' <= *pos && *pos <= '9') ||
+                ('a' <= *pos && *pos <= 'f') ||
+                ('A' <= *pos && *pos <= 'F')))
             {
                 pos++;
                 isHex = true;
@@ -183,7 +180,7 @@ long TokenMatching::DecimalMatcher(const char* start, const char* end)
 
     while (pos < end)
     {
-        if ('0' <= *pos & *pos <= '9')
+        if ('0' <= *pos && *pos <= '9')
         {
             valid = true;
             negativeAllowed = false;
@@ -222,15 +219,22 @@ long TokenMatching::IdentifierMatcher(const char* start, const char* end)
 {
     const char* pos = start;
 
+    // one colon is allowed for the package
+    char allowedColon = ':';
+
     // (isprint(*pos) || (0x80 & *pos)) - used to allow all multi-byte utf8
     // This means some utf8 punctuation can be used in identifiers, but that is OK
-    if (pos < end && (isprint(*pos) || (0x80 & *pos)) && !ispunct(*pos) && !isspace(*pos) && !isdigit(*pos))
+    if (pos < end && (isprint(*pos) || (0x80 & *pos)) && (!ispunct(*pos) || allowedColon == *pos) && !isspace(*pos) && !isdigit(*pos))
     {
+        if (':' == *pos) allowedColon = ' ';    // ' ' Just needs to be a non-punctuation character
+
         pos++;
 
         // Digits allowed now.
-        while (pos < end && (isprint(*pos) || (0x80 & *pos)) && !ispunct(*pos) && !isspace(*pos))
+        while (pos < end && (isprint(*pos) || (0x80 & *pos)) && (!ispunct(*pos) || allowedColon == *pos) && !isspace(*pos))
         {
+            if (':' == *pos) allowedColon = ' ';    // ' ' Just needs to be a non-punctuation character
+
             pos++;
         }
 
@@ -276,27 +280,30 @@ void Tokenizer::internalTokenize(const char*& runner, const char* end)
         }
 
         char toLookup = *runner;
+
+        bool is_punct = ispunct(toLookup);
         // The digit 0 can be any of the nuumber encodings.
         // '1' to '9' can only be decimal encoding.  Use '1' as the lookup so we don't need to repeat the matchers.
-        if ('2' <= toLookup && toLookup <= '9') toLookup = '1';
-
-        auto match = tokenReadingMap.find(toLookup);
-        if (match == tokenReadingMap.end() && !ispunct(toLookup))
+        if ('2' <= toLookup && toLookup <= '9')
         {
-            // Try the default match of char 0 for identifiers.
-            // Note: identifiers can not start with punctuation
-            match = tokenReadingMap.find(0);
+            toLookup = '1';
+        }
+        else if ((isprint(toLookup) || (0x80 & toLookup)) && (!is_punct || ':' == toLookup) && !isspace(toLookup) && !isdigit(toLookup))
+        {
+            toLookup = 'a';  // Start of an itentifier - match them all to 'a'
+            is_punct = false;
         }
 
+        auto match = tokenReadingMap.find(toLookup);
         if (match != tokenReadingMap.end())
         {
             match->second->findNextToken(tokens.back(), characterNumber, lineNumber, runner, end);
         }
-        else if (ispunct(toLookup))
+        else if (is_punct)
         {
             // Bad / unsupported punctuation
             Token& token = tokens.back();
-            token.typeAndFlags.type = Token::badPunctuation;
+            token.typeFlags = Token::badPunctuation;
             token.tokenString = string_view(runner++, 1);
             characterNumber++;
         }

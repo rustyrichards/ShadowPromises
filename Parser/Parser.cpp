@@ -3,7 +3,7 @@
 #include <format>
 #include <limits>
 
-Token& Parser::genericBlock = *new Token(0, 0, Token::block_start, Token::blockFollows);
+Token& Parser::genericBlock = *new Token(0, 0, Token::block_start);
 
 unsigned long decodeHex(
 	const char*& runner,
@@ -60,21 +60,21 @@ unsigned long decodeHex(
 		}
 		else if (0x07ffL >= result)
 		{
-			*(dest++) = 0x0c0 + (result >> 6);
-			*(dest++) = 0x080 + (result & 0x03f);
+			*(dest++) = 0x0c0 + static_cast<char>((result >> 6));
+			*(dest++) = 0x080 + static_cast<char>((result & 0x03f));
 		}
 		else if (0x0ffffL >= result)
 		{
-			*(dest++) = 0x0E0 + (result >> 12);
-			*(dest++) = 0x080 + ((result >> 6) & 0x03f);
-			*(dest++) = 0x080 + (result & 0x03f);
+			*(dest++) = 0x0E0 + static_cast<char>((result >> 12));
+			*(dest++) = 0x080 + static_cast<char>(((result >> 6) & 0x03f));
+			*(dest++) = 0x080 + static_cast<char>((result & 0x03f));
 		}
 		else if (0x01FFFFL >= result)
 		{
-			*(dest++) = 0x0E0 + (result >> 18);
-			*(dest++) = 0x080 + ((result >> 12) & 0x03f);
-			*(dest++) = 0x080 + ((result >> 6) & 0x03f);
-			*(dest++) = 0x080 + (result & 0x03f);
+			*(dest++) = 0x0E0 + static_cast<char>((result >> 18));
+			*(dest++) = 0x080 + static_cast<char>(((result >> 12) & 0x03f));
+			*(dest++) = 0x080 + static_cast<char>(((result >> 6) & 0x03f));
+			*(dest++) = 0x080 + static_cast<char>((result & 0x03f));
 		}
 	}
 
@@ -140,7 +140,7 @@ long long internalDecodeIntegralPart(string_view::const_iterator& runner, string
 
 double internalDecodeExponentialToDouble(string_view::const_iterator& runner, string_view::const_iterator& end)
 {
-	double val = NAN;
+    double val;
 
     long digitsAfterDecimal = 0;
 
@@ -305,13 +305,13 @@ void ParseNode::decodeString(string_view maybeEscaped)
 void ParseNode::setType(Token::TokenType inType)
 {
 	
-	// Do not change token.typeAndFlags.type if it is already marked as a failure
-	if (Token::failures > token.typeAndFlags.type)
+	// Do not change token.typeFlags if it is already marked as a failure
+	if (Token::failures > token.typeFlags)
 	{
 		// Do not change to unknownToken or anything less
-		if (Token::unknownToken < (long)inType) token.typeAndFlags.type = (long)inType;
+		if (Token::unknownToken < (long)inType) token.typeFlags = (long)inType;
 
-		switch (token.typeAndFlags.type)
+		switch (token.typeFlags)
 		{
 		case Token::number:
 			decodeExponentialToDouble(token.tokenString);
@@ -372,7 +372,7 @@ long Parser::parseFunctionCall(
 				clearParsingFlag(changeParseState(state, callParameters), inBlock));
 
 			// Pos will have advanced - but 2 parameter lists in a row is not allowed, so just advance next type and continue.
-			nextType = pos->typeAndFlags.type;
+			nextType = pos->typeFlags;
 		}
 		else
 		{
@@ -407,7 +407,7 @@ long Parser::parseBlock(
 	// NOTE: use the general internalParse.  The only difference from the root is that a function block supports :self and :return
 	current->block = internalParse(depth + 1, blockState);
 
-	return pos->typeAndFlags.type;
+	return pos->typeFlags;
 }
 
 ParseNode* Parser::internalParseParameterList(
@@ -441,7 +441,7 @@ ParseNode* Parser::internalParseParameterList(
 		case Token::functionReturn:
 		case Token::selfCall:
 			// Few keywords are allowed in parameter lists
-			if (!current->hasParsingFlags(Token::allowedInParameters))
+			if (!newNode->hasParsingFlags(Token::allowedInParameters))
 			{
 				newNode->parsingError = "Error:  This keyword is not allowed in a parameter list - " + newNode->token.errorDisplay();
 			}
@@ -455,7 +455,7 @@ ParseNode* Parser::internalParseParameterList(
 		{
 			// The rejected keywords, functionReturn and selfCall mean it is not necessary to test the rest of the parsing flags here
 
-			auto nextType = pos->typeAndFlags.type;
+			auto nextType = pos->typeFlags;
 
 			if (Token::params_start == nextType)
 			{
@@ -578,7 +578,7 @@ ParseNode* Parser::internalParse(
 			}
 		}
 
-		auto nextType = pos->typeAndFlags.type;
+		auto nextType = pos->typeFlags;
 
 		long type = current->getType();
 
