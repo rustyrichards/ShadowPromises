@@ -7,193 +7,103 @@
 
 #include <iostream>
 
+void shadowPromisesIdToTokenType(const MatchInfo& info, Token& token)
+{
+
+}
+
 extern "C++" EXPORT Tokenizer& initShadowPromisesTokenizer()
 {
-    /* Changing out the tokenizer for a regex based generral tokenizer
-    Tokenizer* spTokenizer = (new Tokenizer(
-        new map<string_view, Token::TypeAndParsingFlags>({
-            make_pair(":struct"sv, 
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::blockFollows
-                )),
-            make_pair(":test"sv, 
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::parametersFollows |
-                    Token::ParsingFlags::testResult
-                )),
-            make_pair(":if"sv, 
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::requiresTestResult |
-                    Token::ParsingFlags::blockFollows |
-                    Token::ParsingFlags::elseAllowed
-                )),
-            make_pair(":else"sv, 
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::requiresElseAllowed |
-                    Token::ParsingFlags::blockFollows
-                )),
-            make_pair(":loop"sv, 
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::loopBlock |
-                    Token::ParsingFlags::blockFollows
-                )),
-            make_pair(":exit"sv, 
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::requiresLoopBlock |
-                    Token::ParsingFlags::requiresTestResult
-                )),
-            make_pair(":and"sv, 
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::allowedInParameters |
-                    Token::ParsingFlags::parametersFollows
-                )),
-            make_pair(":nand"sv,
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::allowedInParameters |
-                    Token::ParsingFlags::parametersFollows
-                )),
-            make_pair(":or"sv,
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::allowedInParameters |
-                    Token::ParsingFlags::parametersFollows
-                )),
-            make_pair(":xor"sv,
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::allowedInParameters |
-                    Token::ParsingFlags::parametersFollows
-                )),
-            make_pair(":test"sv,
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::nameFollows |
-                    Token::ParsingFlags::blockFollows
-                )),
-            make_pair(":return"sv,
-                Token::TypeAndParsingFlags(
-                    Token::functionReturn,
-                    Token::ParsingFlags::requiresFunctionBlock |
-                    Token::ParsingFlags::identifierFollows
-                )),
-            make_pair(":self"sv,
-                Token::TypeAndParsingFlags(
-                    Token::selfCall,
-                    Token::ParsingFlags::requiresFunctionBlock
-                )),
-            make_pair(":option"sv,
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::compileFlagFollows |
-                    Token::ParsingFlags::blockFollows
-                )),
-            make_pair(":define"sv,
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::compileFlag
-                )),
-            make_pair(":undefine"sv,
-                Token::TypeAndParsingFlags(
-                    Token::keyword,
-                    Token::ParsingFlags::compileFlag
-                )),
-            make_pair("<"sv,
-                Token::TypeAndParsingFlags(
-                    Token::prototype_start,
-                    Token::functionDefinition | 
-                    Token::ParsingFlags::blockFollows
-                    )),
-            make_pair(">"sv,
-                Token::TypeAndParsingFlags(Token::prototype_end)),
-            make_pair("{"sv,
-                Token::TypeAndParsingFlags(Token::block_start)),
-            make_pair("}"sv, 
-                Token::TypeAndParsingFlags(Token::block_end)),
-            make_pair("("sv, 
-                Token::TypeAndParsingFlags(Token::params_start)),
-            make_pair(")"sv, 
-                Token::TypeAndParsingFlags(Token::params_end)),
-            make_pair("|"sv, 
-                Token::TypeAndParsingFlags(
-                    Token::assignment,
-                    Token::ParsingFlags::valueFollows |
-                    Token::ParsingFlags::identifierFollows
-                )),
-            })));
-    spTokenizer->scopeChar = L':';
-    */
-    Tokenizer* spTokenizer = (new Tokenizer(
-        new map<char, TokenMatching*>({
-            make_pair('"',
-                new TokenMatching(
-                    TokenMatching::StringMatcher,
-                    Token::stringValue,
-                    Token::badString
-                )
-            ),
-            make_pair('\'',
-                new TokenMatching(
-                    TokenMatching::StringMatcher,
-                    Token::stringValue,
-                    Token::badString
-                )
-            ),
-            make_pair('0',
-                new TokenMatching(
-                    new TokenMatching(
-                        TokenMatching::HexMatcher,
-                        Token::number,
-                        Token::badNumber
-                    ),
-                    TokenMatching::DecimalMatcher,
-                    Token::hexNumber
-                )
-            ),
-            make_pair('1',
-                new TokenMatching(
-                    TokenMatching::DecimalMatcher,
-                    Token::number,
-                    Token::badNumber
-                )
-            ),
-            make_pair('-',
-                new TokenMatching(
-                    TokenMatching::DecimalMatcher,
-                    Token::number,
-                    Token::badNumber
-                )
-            ),
-            make_pair('#',
-                new TokenMatching(
-                    TokenMatching::RestOfLineMatcher,
-                    Token::comment,
-                    Token::badUnknown
-                )
-            ),
-            make_pair('.', new TokenMatching(Token::member)),
-            make_pair('{', new TokenMatching(Token::block_start)),
-            make_pair('}', new TokenMatching(Token::block_end)),
-            make_pair('(', new TokenMatching(Token::params_start)),
-            make_pair(')', new TokenMatching(Token::params_end)),
-            make_pair('[', new TokenMatching(Token::prototype_start)),
-            make_pair(']', new TokenMatching(Token::prototype_end)),
-            make_pair('|', new TokenMatching(Token::assignment)),
-            make_pair('a',
-                new TokenMatching(
-                    TokenMatching::IdentifierMatcher,
-                    Token::comment,
-                    Token::badUnknown
-                )
-            ),
-        }))
+    Tokenizer* spTokenizer = (
+        new Tokenizer(
+            new map<char, TokenMatching*>({
+                make_pair(' ',
+                    new TokenMatching(WhiteSpaceMatcher)
+                ),
+                make_pair('"',
+                    new TokenMatching(StartEndMatcher, '"')
+                ),
+                make_pair('\'',
+                    new TokenMatching(StartEndMatcher, '\'')
+                ),
+                make_pair('0',
+                    new TokenMatching(NuberMatcher)
+                ),
+                make_pair('-',
+                    new TokenMatching(NuberMatcher)
+                ),
+                make_pair('/',
+                    new TokenMatching(LineCommentMatcher, '/')
+                ),
+                make_pair('*',
+                    new TokenMatching(StartEndMatcher, '*')
+                ),
+                make_pair('a',
+                    new TokenMatching(IdentifierMatcher, ':')
+                ),
+                make_pair('.', new TokenMatching('.')),
+                make_pair('{', new TokenMatching('{')),
+                make_pair('}', new TokenMatching('}')),
+                make_pair('(', new TokenMatching('(')),
+                make_pair(')', new TokenMatching(')')),
+                make_pair('[', new TokenMatching('[')),
+                make_pair(']', new TokenMatching(']')),
+                make_pair('@', new TokenMatching('@')),
+            }),
+            // The id (char) to typeFlags converter
+            [](const MatchInfo& info, Token& token)
+            {
+                switch (info.id)
+                {
+                case '"':
+                case '\'':
+                    token.typeFlags = Token::stringValue;
+                    break;
+                case '1':
+                    token.typeFlags = Token::number;
+                    break;
+                case 'x':
+                    token.typeFlags = Token::hexNumber;
+                    break;
+                case '/':
+                    token.typeFlags = Token::comment;
+                    break;
+                case '*':
+                    token.typeFlags = Token::multiLineComment;
+                    break;
+                case 'a':
+                    token.typeFlags = Token::identifier;
+                    break;
+                case ':':
+                    token.typeFlags = Token::identifier | Token::packageName;
+                    break;
+                case '.':
+                    token.typeFlags = Token::member;
+                    break;
+                case '{':
+                    token.typeFlags = Token::block_start;
+                    break;
+                case '}':
+                    token.typeFlags = Token::block_end;
+                    break;
+                case '(':
+                    token.typeFlags = Token::params_start;
+                    break;
+                case ')':
+                    token.typeFlags = Token::params_end;
+                    break;
+                case '[':
+                    token.typeFlags = Token::prototype_start;
+                    break;
+                case ']':
+                    token.typeFlags = Token::prototype_end;
+                    break;
+                case '@':
+                    token.typeFlags = Token::assignment;
+                    break;
+                }
+            }
+        )
     );
     return *spTokenizer;
 }
@@ -208,7 +118,9 @@ extern "C" EXPORT void dumpTokens(
     {
         output << "TokenIndex:  " << count++ << "  String: " << runner->tokenString << endl <<
             "Line: " << runner->startingLine << "  Characer: " << runner->startingCharacter << endl <<
-            "Type: " << runner->typeFlags << endl << endl;
+            "Type: ";
+        runner->OutputTypeFlag(output) << endl << endl;
+
         runner++;
     }
 }

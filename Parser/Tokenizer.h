@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "interop.h"
+#include "TokenScanning.h"
 #include <string>
 #include <xstring>
 #include <array>
@@ -19,16 +20,21 @@ class Tokenizer;
 
 struct EXPORT Token
 {
+protected:
+    static map<long, string_view> tokenTypeNames;
+
 public:
     enum TokenType
     {
-        notAFailure = -2,
-        endOfInput = -1,
+        notAFailure,
+        endOfInput,
 
-        unknownToken = 0,
+        unknownToken,
 
         incomplete,
         comment,
+        multiLineComment,
+        identifier,
         number,
         hexNumber,
         stringValue,
@@ -36,18 +42,17 @@ public:
         scope,
         member,
         name,
+        keyword,
         functionReturn,
         selfCall,
         compilerFlag,
 
 
-        sectionSize = 1024,
+        sectionSize = 64,
 
-        keyword = 1024,
+        packageName = 64,
 
-        identifier = 2048,
-
-        block = 3072,
+        block = 128,
         block_start,
         block_end,
         params_start,
@@ -55,7 +60,7 @@ public:
         prototype_start,
         prototype_end,
 
-        failures = 4096,
+        failures = 256,
         badString,
         badNumber,
         badPunctuation,
@@ -124,6 +129,8 @@ public:
         return std::format("\"{:20}\"\nLine: {} Offset: {}", tokenString, startingLine, startingCharacter);
     }
 
+    ostream& OutputTypeFlag(ostream& output);
+
     bool isKeyword();
     bool isIdentifier();
     bool isBlock();
@@ -132,71 +139,32 @@ public:
 class EXPORT TokenMatching
 {
 public:
-    // I wanted to use regex for the tokenMatcher
-    // but C++ has regex issues so instead here are some
-    // token matchers
-    static long StringMatcher(const char* start, const char* end);
-    static long HexMatcher(const char* start, const char* end);
-    static long DecimalMatcher(const char* start, const char* end);
-    static long IdentifierMatcher(const char* start, const char* end);
-    static long RestOfLineMatcher(const char* start, const char* end);
     // To make your own matcher your can use lambdas ->
-    // [](const char* start, const char* end) -> long {...}
+    // [](const char* start, const char* end, char special) -> MatchInfo {...}
 
-    // (*tokenMatcher)(start, end);
-    long (*tokenMatcher)(const char*, const char*);
-    Token::TokenType   success;
-    Token::TokenType   failure;
-    TokenMatching*     nextPossibleMatch;
-    bool               mayBeMultiline;
+    char matchOrSpecial;
+    // (*tokenMatcher)(const char* start, const char* end, char special);
+    MatchInfo (*tokenMatcher)(const char* start, const char* end, char special);
 
     ~TokenMatching()
     {
-        delete nextPossibleMatch;
-        nextPossibleMatch = NULL;
     }
 
-    TokenMatching(Token::TokenType inSuccess)
+    TokenMatching(char match)
     {
+        matchOrSpecial = match;
         tokenMatcher = NULL;
-        success = inSuccess;
-        failure = Token::badUnknown;
-        nextPossibleMatch = NULL;
-        mayBeMultiline = false;
     }
 
     TokenMatching(
-        long (*inMatcher)(const char*, const char*),
-        Token::TokenType inSuccess,
-        Token::TokenType inFailure,
-        bool inMayBeMultiline = false)
+        MatchInfo (*inTokenMatcher)(const char*, const char*, char),
+        char special = 0)
     {
-        tokenMatcher = inMatcher;
-        success = inSuccess;
-        failure = inFailure;
-        nextPossibleMatch = NULL;
-        mayBeMultiline = inMayBeMultiline;
-    }
-
-    TokenMatching(
-        TokenMatching* next,
-        long (*inMatcher)(const char* start, const char* end),
-        Token::TokenType inSuccess,
-        bool inMayBeMultiline = false)
-    {
-        tokenMatcher = inMatcher;
-        success = inSuccess;
-        failure = Token::TokenType::notAFailure;
-        nextPossibleMatch = next;
-        mayBeMultiline = inMayBeMultiline;
+        matchOrSpecial = special;
+        tokenMatcher = inTokenMatcher;
     }
 
     bool isSingleCharacterMatch() { return NULL == tokenMatcher; }
-
-    void findNextToken(Token& nextToken, long& characterNumber, long& lineNumber, const char*& runner, const char* end);
-
-protected:
-    long countCharactersAndLineBreaks(const char*& runner, const char* end, long& characterNumber);
 };
 
 // token_vector basically just exists to add the EXPORT. IT is not just to simplify using token_vector
@@ -214,14 +182,22 @@ protected:
     list<ReadFileData*> sourceFileData;
 
 public:
+    void (*idToTokenType)(const MatchInfo& info, Token& token);
+
     // Collections
     map<char, TokenMatching*>& tokenReadingMap;
-
 
     token_vector& tokens;
 
     // Constructor
-    Tokenizer(map<char, TokenMatching*>* inTokenReadingMap);
+    Tokenizer(
+        map<char, TokenMatching*>* inTokenReadingMap,
+        void (*inIdToTokenType)(const MatchInfo&, Token&)
+    ) :
+        idToTokenType(inIdToTokenType),
+        tokenReadingMap(*inTokenReadingMap),
+        tokens(*(new token_vector()))
+    {}
 
     void tokenize(istream& input);
     void tokenize(boost::filesystem::path& filePath);

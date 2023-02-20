@@ -99,20 +99,20 @@ public:
 class EXPORT Parser
 {
 public:
-	enum {
+	enum ParsingStates{  
 		top,
 		prototype,
 		functionBody,
 		callParameters,
-		logicalTest,		// Like function parameters, the the evaluation shortcuts
+		insideLoop,
 
-		nonBitFlagMask = Token::testResult - 1,
+        nonBitFlagMask = Token::testResult - 1,
 
-		// Bit flags
-		testResultAvailable = Token::testResult,
-		elseIsAllowed = Token::testResult << 1,
-		inBlock = Token::testResult << 2,
-		loopExitAllowed = Token::testResult << 3,
+        // Bit flags
+        testResultAvailable = Token::testResult,
+        elseIsAllowed = Token::testResult << 1,
+        inBlock = Token::testResult << 2,
+        loopExitAllowed = Token::testResult << 3,
 	};
 
 protected:
@@ -178,7 +178,11 @@ public:
 			(tokenFlags & (testResultAvailable | elseIsAllowed));
 	}
 
-	Parser(map<char, TokenMatching*>* matchPatterns) : tokenizer(*new Tokenizer(matchPatterns)) {}
+	Parser(
+        map<char, TokenMatching*>* matchPatterns,
+        void (*inIdToTokenType)(const MatchInfo&, Token&)
+    ) : tokenizer(*new Tokenizer(matchPatterns, inIdToTokenType)) {}
+
 	Parser(Tokenizer& inTokenizer) : tokenizer(inTokenizer) {}
 
 	inline void tokenize(istream& input) { tokenizer.tokenize(input); }

@@ -160,6 +160,7 @@
     <ClInclude Include="ReadFileData.h" />
     <ClInclude Include="ShadowPromisesTokenizer.h" />
     <ClInclude Include="Tokenizer.h" />
+    <ClInclude Include="TokenScanning.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
@@ -173,6 +174,7 @@
     <ClCompile Include="ReadFileData.cpp" />
     <ClCompile Include="ShadowPromisesTokenizer.cpp" />
     <ClCompile Include="Tokenizer.cpp" />
+    <ClCompile Include="TokenScanning.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
