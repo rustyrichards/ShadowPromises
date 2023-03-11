@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>      // ifstream
+#include <string>
 
 bool Token::isKeyword()
 {
@@ -81,34 +82,43 @@ Token::Token(
     typeFlags(inType)
 {}
 
-ostream& Token::OutputTypeFlag(ostream& output)
+
+
+void TokenFlagToString(string& toAppendFlags, long tokenTypeFlags)
 {
-    long flagRemoved = typeFlags & ~packageName;
-    long packageFlag = typeFlags & packageName;
+    long flagRemoved = tokenTypeFlags & ~Token::packageName;
+    long packageFlag = tokenTypeFlags & Token::packageName;
 
     auto match = Token::tokenTypeNames.find(flagRemoved);
     if (match != Token::tokenTypeNames.end())
     {
-        output << match->second;
+        toAppendFlags += match->second;
     }
     else
     {
-        output << flagRemoved;
+        toAppendFlags += to_string(flagRemoved);
     }
     if (0 != packageFlag)
     {
+        toAppendFlags += " ";
+
         match = Token::tokenTypeNames.find(packageFlag);
         if (match != Token::tokenTypeNames.end())
         {
-            output << " " << match->second;
+            toAppendFlags += match->second;
         }
         else
         {
-            output << " " << packageFlag;
+            toAppendFlags += to_string(packageFlag);
         }
     }
+}
 
-    return output;
+ostream& Token::OutputTypeFlag(ostream& output)
+{
+    string toString;
+    TokenFlagToString(toString, typeFlags);
+    return output << toString;
 }
 
 token_vector::token_vector() : vector<Token>()

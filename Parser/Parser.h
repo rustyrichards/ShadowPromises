@@ -3,215 +3,176 @@
 
 #include "framework.h"
 #include "Tokenizer.h"
+#include "SymbolTable.h"
+#include <initializer_list>
+#include <vector>
+#include <string>
+#include <unordered_set>
 
 using namespace std;
 
-class EXPORT funct
-{
-};
+/*
+* The Goal of Parser is to turn the tokens into valid statements, or resnable error messages.
+* It should:
+*   1) Match the tokens to valid statements
+*       a) Valid statementes are added to the parse tree
+*       b) Invalid statements are formattted into an error for display
+*   2) Set variable types
+*       a) Untyped variables have their types set
+*       b) Variable type mismatches are formatted into an error for display
+*   3) The parse rules are based on state and matching tokens. These rules can be replaced
+*/
 
-class EXPORT ParseNode
-{
-protected:
-	void decodeExponentialToDouble(string_view numberString);
-	void decodeHexToDouble(string_view numberString);
-	void decodeString(string_view maybeEscaped);
-	bool setEscapeValue(char*& dest, const char*& runner, const char* end);
+enum PareseStates {
+    None = 0,
+    Root = 1,       // Outside of any block.
+    InBlock,        // Outside of function.  InFunction takes precidence.
+    InFunction,     // Inside of a functions.
 
-public:
-	enum nodeType {
-		integerValue = 1,
-		doubleValue,
-		stringValue,
-		structValue,
-
-		functon,
-
-		value = 1024,	// less than value means it is a value type
-
-		statement,
-        ifElse,
-        loop
-	};
-
-	union EXPORT nodeValue {
-		nodeValue(double inVal) : doubleVal(inVal) {};
-		nodeValue(long inVal) : longVal(inVal) {};
-		nodeValue(string_view inVal) : stringVal(inVal) {};
-
-		long		longVal;
-		double		doubleVal;
-		string_view stringVal;
-		funct		functValue;
-	};
-
-	long		nodeType;
-	nodeValue	val;
-	char*		replacementStringBuffer;
-	Token&		token;		// Note: token.typeFlags will be adjusted to the type that fits the token and parsing state.
-	ParseNode*	next;
-
-	ParseNode* identifier;	// For nodes that need an identifier
-	ParseNode* parameters;	// For nodes that have a parameter list.  May be a parameter list variable
-	ParseNode* block;		// For a new block
-
-	bool isFunction;		// true for a function definition
-
-	std::string parsingError;	// Nun-empty if there was an error
-
-	inline long getType() { return (unsigned long)token.typeFlags; }
-	inline long getParsingFlags() { return 0; }
-	void setType(Token::TokenType inType);
-
-	inline bool hasParsingFlags(long flags)
-	{
-		return false;
-	}
-
-	inline bool hasRequirementsFlags()
-	{
-		return  false;
-	}
-
-	inline bool hasFollowsFlags()
-	{
-		return  false;
-	}
-
-	inline bool hasNoError()
-	{
-		return 0 == parsingError.length();
-	}
-
-	ParseNode(Token& inToken, Token::TokenType inType = Token::unknownToken);
-
-	~ParseNode()
-	{
-		delete next;
-		delete identifier;
-		delete parameters;
-		delete block;
-		delete[] replacementStringBuffer;
-	}
+    // Flags
+    InLoop = 16,    // Inside of a loop (Loop exits allowed.)
 };
 
 
-class EXPORT Parser
-{
+
+class ParseMatch {
 public:
-	enum ParsingStates{  
-		top,
-		prototype,
-		functionBody,
-		callParameters,
-		insideLoop,
+    string_view     toMatch;
+    long            tokenTypeToMatch;
+    long            requiredIdentifierType;
 
-        nonBitFlagMask = Token::testResult - 1,
+    /*
+    * In :if ... :then {...} :else {...}  the :else - the statement ends if there is no else.
+    * stopIfNotMatched is set on optional part of a statement.
+    * This is neded for the Map.  We need to always match the full statement, we can't have arbitrary order in potential statements.
+    */
+    bool            stopIfNotMatched;
 
-        // Bit flags
-        testResultAvailable = Token::testResult,
-        elseIsAllowed = Token::testResult << 1,
-        inBlock = Token::testResult << 2,
-        loopExitAllowed = Token::testResult << 3,
-	};
+    PareseStates    stateChange;
+    long            stateRemoval;   // The inverse of the ParseStates flags ored together
 
-protected:
-	static Token& genericBlock;
+    bool operator == (const ParseMatch& other) const
+    {
+        if (0 < tokenTypeToMatch) return tokenTypeToMatch == other.tokenTypeToMatch;
+        if (0 < toMatch.length()) return toMatch == other.toMatch;
+        if (0 < requiredIdentifierType) return requiredIdentifierType == other.requiredIdentifierType;
+    }
 
-	long parseFunctionCall(
-		long nextType,
-		ParseNode* current,
-		long depth,
-		long state);
+    bool matches(const Token& token, long (*symbolTableTypeMatcher)(const Token& token) ) const
+    {
+        if (0 < tokenTypeToMatch) return tokenTypeToMatch == token.typeFlags;
+        if (0 < toMatch.length()) return toMatch == token.tokenString;
 
-	long parseBlock(
-		long nextType,
-		ParseNode* current,
-		long depth,
-		long state);
+        long type = symbolTableTypeMatcher(token);
+        if (0 < requiredIdentifierType && requiredIdentifierType <= Symbol::specifficType)
+        {
+            return requiredIdentifierType == (type & Symbol::specifficType);
+        }
+        else if (requiredIdentifierType > Symbol::specifficType)
+        {
+            return requiredIdentifierType == (type & ~Symbol::specifficType);
+        }
+    }
 
-	ParseNode* internalParseParameterList(
-		long depth,
-		long state);
+    bool operator < (const ParseMatch& other) const
+    {
+        if (0 < tokenTypeToMatch) return tokenTypeToMatch < other.tokenTypeToMatch;
+        if (0 < toMatch.length()) return 0 < toMatch.compare(other.toMatch);
+        if (0 < requiredIdentifierType) return requiredIdentifierType < other.requiredIdentifierType;
+    }
 
-	ParseNode* internalParse(
-		long depth = 0,
-		long state = top);
+    // Use tokenTypeToMatch in preference to toMatch (string_view) it is faster, and simplier
+    ParseMatch(long inTokenType) :
+        toMatch(""sv),
+        tokenTypeToMatch(inTokenType),
+        stopIfNotMatched(false),
+        stateChange(None),
+        stateRemoval(-1)
+    {}
 
-	token_vector::iterator pos;
-	token_vector::iterator end;
+    ParseMatch(string_view inToMatch, long inTokenType = Token::unknownToken) :
+        toMatch(inToMatch),
+        tokenTypeToMatch(inTokenType),
+        stopIfNotMatched(false),
+        stateChange(None),
+        stateRemoval(-1)
+    {}
+};
 
-	Tokenizer& tokenizer;
-
+class ParseStatement : public vector<ParseMatch*> {
 public:
-	inline long parseStateWihoutFlags(long currentState)
-	{
-		return currentState & nonBitFlagMask;
-	}
-	inline long matchParseState(long currentState, long desiredState)
-	{
-		return (currentState & nonBitFlagMask) == (desiredState & nonBitFlagMask);
-	}
-	inline long changeParseState(long currentState, long newState)
-	{
-		// The current bit falgs with the non bit mask flags of newState
-		return (currentState & ~nonBitFlagMask) | (newState & nonBitFlagMask);
-	}
+    const ParseMatch& startingMatch() const
+    {
+        return *front();
+    }
 
-	inline long setParsingFlag(long currentState, long newState)
-	{
-		// OR in the flags from newState
-		return currentState | (newState & ~nonBitFlagMask);
-	}
+    bool operator < (const ParseStatement& other) const
+    {
+        return startingMatch() < other.startingMatch();
+    }
 
-	inline long clearParsingFlag(long currentState, long newState)
-	{
-		// AND the bit inversion of  the flags from newState  (Remove the selected flags)
-		return currentState & (~(newState & ~nonBitFlagMask));
-	}
+    ParseStatement(std::initializer_list<ParseMatch*> matchers)
+        : vector<ParseMatch*>(matchers)
+    {
+    }
 
-	inline long setTestResultAndElseAllowedFromTokenFlags(long currentState, long tokenFlags)
-	{
-		// NOTE: testResultAvailable == Token::testResult
-		//       and elseIsAllowed == Token::elseAllowed == Token::testResult << 1
-		return (currentState & ~(testResultAvailable| elseIsAllowed)) |
-			(tokenFlags & (testResultAvailable | elseIsAllowed));
-	}
+};
 
-	Parser(
-        map<char, TokenMatching*>* matchPatterns,
-        void (*inIdToTokenType)(const MatchInfo&, Token&)
-    ) : tokenizer(*new Tokenizer(matchPatterns, inIdToTokenType)) {}
+class ParseErrr {
+    string errorMessage;
+    Token& failingToken;
 
-	Parser(Tokenizer& inTokenizer) : tokenizer(inTokenizer) {}
+    ParseErrr(ParseStatement* failedStatement, ParseMatch* failedMatch, long parseState, Token& inToken) :
+        errorMessage(),
+        failingToken(inToken)
+    {
+        for (auto parseMatch : *failedStatement)
+        {
+            if (NULL != parseMatch)
+            {
+                if (0 < errorMessage.length()) errorMessage += "\n";
 
-	inline void tokenize(istream& input) { tokenizer.tokenize(input); }
-	inline void tokenize(boost::filesystem::path& filePath) { tokenizer.tokenize(filePath); }
-	inline void tokenize(string_view stringBuffer) { tokenizer.tokenize(stringBuffer); }
+                if (0 < parseMatch->toMatch.length())
+                {
+                    errorMessage += parseMatch->toMatch;
+                }
+                else if (0 < parseMatch->tokenTypeToMatch)
+                {
+                    errorMessage += "Token:";
+                    TokenFlagToString(errorMessage, parseMatch->tokenTypeToMatch);
+                }
+                else if (0 < parseMatch->requiredIdentifierType)
+                {
+                    errorMessage += "Type:";
+                    //TypeToString(errorMessage, parseMatch->tokenTypeToMatch);
+                }
+            }
 
-	inline ParseNode* parseTokens()
-	{
-		pos = tokenizer.tokens.begin();
-		end = tokenizer.tokens.end();
+            if (parseMatch == failedMatch)
+            {
+                errorMessage += "\n-----\n";
+            }
 
-		return internalParse();
-	}
+        }
+        errorMessage += failingToken.tokenString;
+        errorMessage += "\nLine: ";
+        errorMessage += to_string(failingToken.startingLine);
+        errorMessage += "\nChar: ";
+        errorMessage += to_string(failingToken.startingCharacter);
+    }
+};
 
-	inline ParseNode* parse(istream& input) 
-	{ 
-		tokenizer.tokenize(input);
-		return parseTokens();
-	}
-	inline ParseNode* parse(boost::filesystem::path& filePath)
-	{
-		tokenizer.tokenize(filePath);
-		return parseTokens();
-	}
-	inline ParseNode* parse(string_view stringBuffer)
-	{
-		tokenizer.tokenize(stringBuffer);
-		return parseTokens();
-	}
+
+class Parser {
+public:
+    unordered_set<ParseStatement*> possibleStatements;
+
+    Parser(std::initializer_list<ParseStatement*> statements)
+        :possibleStatements(statements.begin(), statements.end())
+    {
+    }
+
+    list<ParseErrr> parse(token_vector& tokens);
 };
 
 #endif // PARSER_H_INCLUDED

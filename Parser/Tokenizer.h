@@ -20,12 +20,13 @@ class Tokenizer;
 
 struct EXPORT Token
 {
-protected:
+public:
     static map<long, string_view> tokenTypeNames;
 
 public:
     enum TokenType
     {
+        nonToken,
         notAFailure,
         endOfInput,
 
@@ -104,7 +105,7 @@ public:
         _followsFlagsMax = 1048576 - 1,
 
         _extensionFlags = 1048576,   // 2^20
-        compileFlag = 1048576,         // For use in contidional compilation.  Most should come from the build environment, but they can be set or unset in modules.
+        compileFlag = 1048576,       // For use in contidional compilation.  Most should come from the build environment, but they can be set or unset in modules.
     };
 
 
@@ -135,6 +136,8 @@ public:
     bool isIdentifier();
     bool isBlock();
 };
+
+void TokenFlagToString(string& toAppendFlags, long tokenTypeFlags);
 
 class EXPORT TokenMatching
 {

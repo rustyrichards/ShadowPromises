@@ -154,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="Header.h" />
     <ClInclude Include="interop.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="pch.h" />
@@ -173,6 +174,7 @@
     </ClCompile>
     <ClCompile Include="ReadFileData.cpp" />
     <ClCompile Include="ShadowPromisesTokenizer.cpp" />
+    <ClCompile Include="SymbolTable.cpp" />
     <ClCompile Include="Tokenizer.cpp" />
     <ClCompile Include="TokenScanning.cpp" />
   </ItemGroup>

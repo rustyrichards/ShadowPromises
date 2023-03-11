@@ -12,6 +12,7 @@
 #include "interop.h"
 #include "TokenScanning.h"
 #include "Tokenizer.h"
+#include "SymbolTable.h"
 #include "Parser.h"
 #include "ShadowPromisesTokenizer.h"
 #include <string>
