@@ -76,9 +76,16 @@ Run on a given thread or threadpool
 
     :startAsync [ThreadStruct] /FunctionName\(/ParameterList\) [| /PromiseResult\]
 
+## Definate Function
+This type of function always returns the return type, and cannot return an error.
+Needed for:
+  Functions in the logical tests.
+  Floating point math (IEE floating point results - no error return, but NAN and INF results possible)
+  Resource release - this must always succeed.
 
 ## Promise
-All functions return a result with the following:
+NOTE:  A definate Function can auto-wrap in a promise result
+Functions return a result with the following:
 
 Failed
 *  bool -> True if the function failed
@@ -123,9 +130,9 @@ Make the function save it to the variable "double"
 
 Make and call a sum function using tail recursion
 ```
-<
+[
     float[] in
->
+]
 {
     :if (:isEmpty(in))
     :then 

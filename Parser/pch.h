@@ -8,16 +8,35 @@
 #define PCH_H
 
 // add headers that you want to pre-compile here
-#include "framework.h"
+#include <string>
+#include <xstring>
+#include <array>
+#include <format>
+#include <iosfwd>
+#include <iostream>
+#include <map>
+#include <list>
+#include <set>
+#include <span>
+#include <vector>
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
+
 #include "interop.h"
+#include "ReadFileData.h"
+#include "framework.h"
 #include "TokenScanning.h"
 #include "Tokenizer.h"
 #include "SymbolTable.h"
 #include "Parser.h"
 #include "ShadowPromisesTokenizer.h"
-#include <string>
-#include <xstring>
 
-
-
+// The C++ 20 STL COOKBOOK  - in general it seems to be a good book
+// Claimied that it is a better practace to just using for the specific
+// classes like:  using namespace std::string
+// This may matter for Modules.  For old style #include you only get
+// the headers you actually included.
+//
+// That does not work.  using namespace std::string, using namespace std::basic_strig - doesn't work.
+using namespace std;
 #endif //PCH_H

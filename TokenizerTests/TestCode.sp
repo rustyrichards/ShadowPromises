@@ -7,12 +7,11 @@ Line 2 of multi-line string' // The string is complete
 0xABCD @ c
 'test ▲\u{25B2} 𝅘𝅥\u{1D15F} \x{0d}\x{0a}' @ d
 
-:test(
+:test
     :equals(
         8.8
         y
     )
-)
 :if {
 	7.7 @ y
 } :else {

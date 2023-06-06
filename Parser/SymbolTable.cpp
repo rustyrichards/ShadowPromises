@@ -24,9 +24,9 @@ Symbol SymbolTable::findTokenDefinition(Symbol toFind)
     return match;
 }
 
-Symbol SymbolTable::addOrMatchSymbol(Token& token, string& location)
+Symbol SymbolTable::addOrMatchSymbol(Token& token, vector<int>& inParseTreeLocation)
 {
-    Symbol newSymbol(token, location);
+    Symbol newSymbol(token, inParseTreeLocation);
 
     Symbol matched = findTokenDefinition(newSymbol);
     if (matched.token.typeFlags != Token::nonToken)
@@ -36,8 +36,8 @@ Symbol SymbolTable::addOrMatchSymbol(Token& token, string& location)
     else
     {
         // Location is free to change after this function ends.  So we will make a backup of the location.
-        stringsToCleanup.push_back(new string(location));
-        newSymbol.parseTreeLocation = *(stringsToCleanup.back());
+        locationsToCleanup.push_back(new vector<int>(inParseTreeLocation));
+        newSymbol.pareseLocation = *(locationsToCleanup.back());
 
         symbols.emplace(newSymbol);
         return newSymbol;

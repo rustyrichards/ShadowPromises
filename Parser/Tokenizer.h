@@ -2,19 +2,6 @@
 #define TOKENIZER_H_INCLUDED
 
 #include "pch.h"
-#include "interop.h"
-#include "TokenScanning.h"
-#include <string>
-#include <xstring>
-#include <array>
-#include <map>
-#include <list>
-#include <format>
-#include <regex>
-#include <boost/filesystem.hpp>
-#include "ReadFileData.h"
-
-using namespace std;
 
 class Tokenizer;
 
