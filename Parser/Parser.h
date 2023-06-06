@@ -31,29 +31,32 @@ enum ParseStates {
 // The parse was becomming too complicated.
 // Instead use the same syntax that the tokenizer reads with these extensions:
 /*
-* | is optional
-* ! is a state change
-*   !enterLoop
-*   !exitLoop
-*   !enterFunc
-*   !exitFunc
+* Optional
+*   Parse:opt   - the remainer is optional
+* 
+* State change
+*   Parse:enterLoop
+*   Parse:exitLoop
+*   Parse:enterFunc
+*   Parse:exitFunc
 *   See the ShadowPromisesTokenizer.cpp {}, {}, and () already set state enter and exit
-* # - resolves to value
-*   #bool
-*   #int    - Note int will auto convert to float if neded (some percision may be lost with very large 64 bit integers)
-*             float will not auto convert to int.  The fraction after the decimal is always lost in converting to int.
-*   #float
-*   #string
-*   #type   - any type
-*   #funct  - any function
+* 
+* Values
+*   Parse:bool
+*   Parse:int    - Note int will auto convert to float if neded (some percision may be lost with very large 64 bit integers)
+*                  float will not auto convert to int.  The fraction after the decimal is always lost in converting to int.
+*   Parse:float
+*   Parse:string
+*   Parse:type   - any type
+*   Parse:funct  - any function
 *
 * In ShadowPromises the if statement is:
-*   :test #bool :if { #statements } | :else { #statements }
+*   :test Parse:bool :if { #statements } Parse:opt :else { #statements }
 *
 * In ShadowPromises the loop statement is:
-*   :loop { !enterLoop #statements  !exitLoop }
+*   :loop { Parse:enterLoop #statements  Parse:exitLoop }
 *
 * In ShadowPromises a function definition is:
-*   [ #prototypes ] { !enterFunc #statements  !exitFunction }
+*   [ #prototypes ] { Parse:enterFunc #statements  Parse:exitFunction }
 */
 #endif // PARSER_H_INCLUDED
